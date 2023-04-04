@@ -27,7 +27,7 @@ func (c *DB) CreateEntry(ctx context.Context, arg CreateEntryParam) (*pkg.Entry,
 }
 
 func (c *DB) GetEntry(ctx context.Context, id int64) (*pkg.Entry, error) {
-	query := `SELECT * FROM entries WHERE account_id=$1;`
+	query := `SELECT * FROM entries WHERE id=$1;`
 	var res pkg.Entry
 	err := c.db.QueryRow(ctx, query, id).Scan(&res.ID, &res.AccountID, &res.Amount, &res.CreatedAt)
 	if err != nil {

@@ -36,7 +36,7 @@ func TestCreatedEntry(t *testing.T) {
 func TestGetEntry(t *testing.T) {
 	account, _ := createRandomAccount(t)
 	entry1, _ := createRandomEntries(t, account)
-	entry2, err := testQueries.GetEntry(ctx, entry1.AccountID)
+	entry2, err := testQueries.GetEntry(ctx, entry1.ID)
 	if err != nil {
 		t.Fatalf("GetEntry(%d) err = %v", entry1.AccountID, err)
 	}
