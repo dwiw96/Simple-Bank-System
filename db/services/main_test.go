@@ -15,12 +15,14 @@ var (
 	testQueries *DB
 	ctx         context.Context
 	cancel      context.CancelFunc
+	dbpool      *pgxpool.Pool
 )
 
 func TestMain(m *testing.M) {
-	dbpool, err := pgxpool.Connect(context.Background(), "postgresql://db:secret@localhost:5432/bank?sslmode=disable")
+	var err error
+	dbpool, err = pgxpool.Connect(context.Background(), "postgresql://db:secret@localhost:5432/bank?sslmode=disable")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("cannot connect to DB: ", err)
 	}
 	defer dbpool.Close()
 
