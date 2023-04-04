@@ -49,19 +49,45 @@ type TransferTxParams struct {
 	Amount        int64
 }
 type TransferTXResult struct {
-	Transfer    pkg.Transfers
-	FromAccount pkg.Account
-	ToAccount   pkg.Account
-	FromEntry   pkg.Entry
-	ToEntry     pkg.Entry
+	Transfer    *pkg.Transfers
+	FromAccount *pkg.Account
+	ToAccount   *pkg.Account
+	FromEntry   *pkg.Entry
+	ToEntry     *pkg.Entry
 }
 
-func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTXResult, error) {
+func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (*TransferTXResult, error) {
 	var result TransferTXResult
 
 	err := store.execTx(ctx, func(q *DB) error {
+		var err error
+		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParam{
+			FromAccountID: arg.FromAccountID,
+			ToAccountID:   arg.ToAccountID,
+			Amount:        arg.Amount,
+		})
+		if err != nil {
+			return err
+		}
+
+		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParam{
+			accountID: arg.FromAccountID,
+			amount:    -arg.Amount,
+		})
+		if err != nil {
+			return err
+		}
+
+		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParam{
+			accountID: arg.ToAccountID,
+			amount:    arg.Amount,
+		})
+		if err != nil {
+			return err
+		}
+
 		return nil
 	})
 
-	return result, err
+	return &result, err
 }
