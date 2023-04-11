@@ -69,12 +69,12 @@ func TestGetAccount(t *testing.T) {
 
 func TestUpdateAccount(t *testing.T) {
 	account1, _ := createRandomAccount(t)
-	input := pkg.Account{
+	input := UpdateAccountParams{
 		ID:      account1.ID,
 		Balance: util.RandomMoney(),
 	}
 
-	err := testQueries.UpdateAccount(ctx, input.ID, input.Balance)
+	err := testQueries.UpdateAccount(ctx, input)
 	if err != nil {
 		t.Fatalf("Exec Error = %s", err)
 	}

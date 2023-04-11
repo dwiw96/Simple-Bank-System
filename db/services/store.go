@@ -56,11 +56,17 @@ type TransferTXResult struct {
 	ToEntry     *pkg.Entry
 }
 
+//var txKey = struct{}{}
+
 func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (*TransferTXResult, error) {
 	var result TransferTXResult
 
 	err := store.execTx(ctx, func(q *DB) error {
 		var err error
+
+		//txName := ctx.Value(txKey)
+
+		//fmt.Println(txName, "create transfer")
 		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParam{
 			FromAccountID: arg.FromAccountID,
 			ToAccountID:   arg.ToAccountID,
@@ -70,6 +76,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (*Tran
 			return err
 		}
 
+		//fmt.Println(txName, "create entry 1")
 		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParam{
 			accountID: arg.FromAccountID,
 			amount:    -arg.Amount,
@@ -78,10 +85,49 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (*Tran
 			return err
 		}
 
+		//fmt.Println(txName, "create entry 2")
 		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParam{
 			accountID: arg.ToAccountID,
 			amount:    arg.Amount,
 		})
+		if err != nil {
+			return err
+		}
+
+		// From Account
+		// 1. GetAccount to get the balance, 2. Update the balance
+		// 3. GetAccount again to get updated balance
+		// account1, err := q.GetAccountForUpdate(ctx, arg.FromAccountID)
+		// if err != nil {
+		// 	return err
+		// }
+
+		//fmt.Println(txName, "update account 1")
+		err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+			ID:     arg.FromAccountID,
+			Amount: -arg.Amount,
+		})
+		if err != nil {
+			return err
+		}
+
+		// check updated account
+		result.FromAccount, err = q.GetAccount(ctx, arg.FromAccountID)
+		if err != nil {
+			return err
+		}
+
+		//To Account
+		//fmt.Println(txName, "update account 2")
+		err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+			ID:     arg.ToAccountID,
+			Amount: arg.Amount,
+		})
+		if err != nil {
+			return err
+		}
+
+		result.ToAccount, err = q.GetAccount(ctx, arg.ToAccountID)
 		if err != nil {
 			return err
 		}

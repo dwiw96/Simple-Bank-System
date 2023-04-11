@@ -51,8 +51,13 @@ func (r *DB) ListAccount(ctx context.Context, limit int, offset int) ([]pkg.Acco
 	return list, nil
 }
 
-func (r *DB) UpdateAccount(ctx context.Context, id int64, balance int64) error {
-	res, err := r.db.Exec(ctx, "UPDATE accounts SET balance=$1 WHERE id=$2", balance, id)
+type UpdateAccountParams struct {
+	ID      int64
+	Balance int64
+}
+
+func (r *DB) UpdateAccount(ctx context.Context, arg UpdateAccountParams) error {
+	res, err := r.db.Exec(ctx, "UPDATE accounts SET balance=$1 WHERE id=$2", arg.Balance, arg.ID)
 	if err != nil {
 		log.Println("Exec error")
 		return err
@@ -80,5 +85,37 @@ func (r *DB) DeleteAccount(ctx context.Context, id int64) error {
 		return err
 	}
 
+	return nil
+}
+
+func (r *DB) GetAccountForUpdate(ctx context.Context, id int64) (*pkg.Account, error) {
+	query := `SELECT * FROM accounts WHERE id=$1 FOR NO KEY UPDATE`
+	row := r.db.QueryRow(ctx, query, id)
+
+	var account pkg.Account
+	var err error
+	if err = row.Scan(&account.ID, &account.Owner, &account.Balance, &account.Currency, &account.CreatedAt); err != nil {
+		return nil, err
+	}
+	return &account, err
+}
+
+type AddAccountBalanceParams struct {
+	ID     int64
+	Amount int64
+}
+
+func (r *DB) AddAccountBalance(ctx context.Context, arg AddAccountBalanceParams) error {
+	query := `UPDATE accounts SET balance=balance+$1 WHERE id=$2`
+	res, err := r.db.Exec(ctx, query, arg.Amount, arg.ID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected := res.RowsAffected()
+	if rowsAffected == 0 {
+		log.Println("Update Failed")
+		return nil
+	}
 	return nil
 }
