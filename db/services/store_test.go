@@ -172,3 +172,66 @@ func TestTransferTx(t *testing.T) {
 		t.Errorf("Account2 final balance %d != %d", &updateAcc2.Balance, acc2Bal)
 	}
 }
+
+func TestTransferTxDeadlock(t *testing.T) {
+	store := NewStore(dbpool)
+
+	// Create 2 accounts to perform transfer between those two accounts
+	account1, _ := createRandomAccount(t)
+	account2, _ := createRandomAccount(t)
+	fmt.Printf("\n>> before: %d  -  %d\n", account1.Balance, account2.Balance)
+
+	var errs = make(chan error)
+
+	amount := int64(10)
+	n := 10 // n time of concurency
+
+	// do transfer n time using go concurency
+	for i := 0; i < n; i++ {
+		//txName := fmt.Sprintf("tx %d", i+1)
+		arg := TransferTxParams{
+			FromAccountID: account1.ID,
+			ToAccountID:   account2.ID,
+			Amount:        amount,
+		}
+
+		if i%2 == 1 {
+			arg = TransferTxParams{
+				FromAccountID: account2.ID,
+				ToAccountID:   account1.ID,
+				Amount:        amount,
+			}
+		}
+		go func() {
+			//ctx := context.WithValue(context.Background(), txKey, txName)
+			_, err := store.TransferTx(context.Background(), arg)
+
+			errs <- err
+		}()
+	}
+
+	for i := 0; i < n; i++ {
+		err := <-errs
+		if err != nil {
+			t.Errorf("TransferTx() err: %s", err)
+		}
+	}
+
+	//Check the final balance of 2 accounts after do transfer
+	updateAcc1, err := store.GetAccount(ctx, account1.ID)
+	if err != nil {
+		t.Errorf("GetAccount1 err: %v", err)
+	}
+	updateAcc2, err := store.GetAccount(ctx, account2.ID)
+	if err != nil {
+		t.Errorf("GetAccoun2 err: %v", err)
+	}
+
+	fmt.Printf("\n>> after: %d  -  %d\n", updateAcc1.Balance, updateAcc2.Balance)
+	if updateAcc1.Balance != account1.Balance {
+		t.Errorf("Account1 final balance %d != %d", &updateAcc1.Balance, account1.Balance)
+	}
+	if updateAcc2.Balance != account2.Balance {
+		t.Errorf("Account2 final balance %d != %d", &updateAcc2.Balance, account2.Balance)
+	}
+}

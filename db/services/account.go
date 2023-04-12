@@ -105,17 +105,14 @@ type AddAccountBalanceParams struct {
 	Amount int64
 }
 
-func (r *DB) AddAccountBalance(ctx context.Context, arg AddAccountBalanceParams) error {
-	query := `UPDATE accounts SET balance=balance+$1 WHERE id=$2`
-	res, err := r.db.Exec(ctx, query, arg.Amount, arg.ID)
+func (r *DB) AddAccountBalance(ctx context.Context, arg AddAccountBalanceParams) (*pkg.Account, error) {
+	var res pkg.Account
+	query := `UPDATE accounts SET balance=balance+$1 WHERE id=$2
+	RETURNING id, owner, balance, currency, created_at`
+	err := r.db.QueryRow(ctx, query, arg.Amount, arg.ID).Scan(&res.ID, &res.Owner, &res.Balance, &res.Currency, &res.CreatedAt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	rowsAffected := res.RowsAffected()
-	if rowsAffected == 0 {
-		log.Println("Update Failed")
-		return nil
-	}
-	return nil
+	return &res, err
 }
