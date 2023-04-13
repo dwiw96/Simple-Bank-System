@@ -9,3 +9,6 @@ migrateDown:
 	migrate -path db/migration -database "postgresql://db:secret@localhost:5432/bank?sslmode=disable" -verbose down
 migrateForce:
 	migrate -path db/migration -database "postgresql://db:secret@localhost:5432/bank?sslmode=disable" force 
+
+test:
+	go test -v -cover ./...
