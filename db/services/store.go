@@ -1,3 +1,11 @@
+/*
+ * Implement DB transaction 
+ * This code will provide all functions to run database queries individually, as well as
+ * their combinations functions within a transaction.
+ * DB struct doesn't support transaction because each query only can do 1 operations on 1
+ * spesific table, Store struct in this file solved that problem.
+*/
+
 package services
 
 import (
@@ -9,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
+// Store used to embedded DB struct to extend DB functionality
 type Store struct {
 	*DB
 	db *pgxpool.Pool
