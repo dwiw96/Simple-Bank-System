@@ -1,10 +1,10 @@
 /*
- * Implement DB transaction 
+ * Implement DB transaction
  * This code will provide all functions to run database queries individually, as well as
  * their combinations functions within a transaction.
  * DB struct doesn't support transaction because each query only can do 1 operations on 1
  * spesific table, Store struct in this file solved that problem.
-*/
+ */
 
 package services
 
@@ -17,7 +17,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-// Store used to embedded DB struct to extend DB functionality
+// "Store" used to embedded DB struct to extend DB functionality
 type Store struct {
 	*DB
 	db *pgxpool.Pool
@@ -30,9 +30,12 @@ func NewStore(db *pgxpool.Pool) *Store {
 	}
 }
 
-// function to the Store to execute a generic database transaction.
-//func (store *Store) execTx(ctx context.Context, fn func(*DB) error) error {
-//}
+// Add execTc() function to the "Store" to execute a generic database transaction.
+/*
+ * execTx() will start new db transaction, then create new "DB" object.
+ * call callback function with the created "DB", and finally commit or rollback
+ * the transaction based on error returned by the function.
+ */
 
 func (store *Store) execTx(ctx context.Context, fn func(*DB) error) error {
 	tx, err := store.db.BeginTx(ctx, pgx.TxOptions{})
