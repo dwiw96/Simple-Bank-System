@@ -3,11 +3,12 @@
  * docker exec -t postgres_sql psql -U db db -f simple_bank.sql
  */
 
+CREATE TYPE valid_currency AS ENUM ('IDR', 'USD', 'EUR');
 CREATE TABLE accounts (
     id BIGSERIAL PRIMARY KEY,
-    owner VARCHAR NOT NULL,
+    owner VARCHAR NOT NULL, check (owner <> ''),
     balance BIGINT NOT NULL,
-    currency VARCHAR NOT NULL,
+    currency valid_currency NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
@@ -18,16 +19,16 @@ CREATE TABLE accounts (
  */
 CREATE TABLE entries (
     id BIGSERIAL PRIMARY KEY,
-    account_id BIGINT references accounts(id) NOT NULL,
+    account_id BIGINT references accounts(id) NOT NULL, check (account_id > 0),
     amount BIGINT NOT NULL, -- added money to the account balance in thi entries
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
 CREATE TABLE transfers (
     id BIGSERIAL PRIMARY KEY,
-    from_account_id BIGINT REFERENCES accounts(id) NOT NULL,
-    to_account_id BIGINT REFERENCES accounts(id) NOT NULL,
-    amount BIGINT NOT NULL,
+    from_account_id BIGINT REFERENCES accounts(id) NOT NULL, check (from_account_id > 0),
+    to_account_id BIGINT REFERENCES accounts(id) NOT NULL, check (to_account_id > 0),
+    amount BIGINT NOT NULL, check (amount >= 0),
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
