@@ -10,5 +10,8 @@ migrateDown:
 migrateForce:
 	migrate -path db/migration -database "postgresql://db:secret@localhost:5432/bank?sslmode=disable" force 
 
+server:
+	go run main.go
+
 test:
 	go test -v -cover ./...
