@@ -77,7 +77,7 @@ func (r *DB) UpdateAccount(ctx context.Context, arg UpdateAccountParams) error {
 	rowsAffected := res.RowsAffected()
 	if rowsAffected == 0 {
 		log.Println("Update Failed")
-		return nil
+		return err
 	}
 
 	return nil
