@@ -7,7 +7,13 @@ import (
 	"simple-bank-system/db/pkg"
 )
 
-func (r *DB) CreateAccount(ctx context.Context, account pkg.Account) (*pkg.Account, error) {
+type CreateAccountParams struct {
+	Owner    string
+	Balance  int64
+	Currency string
+}
+
+func (r *DB) CreateAccount(ctx context.Context, account CreateAccountParams) (*pkg.Account, error) {
 	var res pkg.Account
 
 	query := `INSERT INTO accounts(owner, balance, currency
@@ -33,8 +39,13 @@ func (r *DB) GetAccount(ctx context.Context, id int64) (*pkg.Account, error) {
 	return &account, nil
 }
 
-func (r *DB) ListAccount(ctx context.Context, limit int, offset int) ([]pkg.Account, error) {
-	res, err := r.db.Query(ctx, "SELECT * FROM accounts ORDER BY id LIMIT $1 OFFSET $2;", limit, offset)
+type ListAccountParams struct {
+	Limit  int
+	Offset int
+}
+
+func (r *DB) ListAccount(ctx context.Context, arg ListAccountParams) ([]pkg.Account, error) {
+	res, err := r.db.Query(ctx, "SELECT * FROM accounts ORDER BY id LIMIT $1 OFFSET $2;", arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

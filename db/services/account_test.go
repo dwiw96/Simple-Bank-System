@@ -11,8 +11,8 @@ import (
 	"simple-bank-system/util"
 )
 
-func createRandomAccount(t *testing.T) (pkg.Account, pkg.Account) {
-	arg := pkg.Account{
+func createRandomAccount(t *testing.T) (pkg.Account, CreateAccountParams) {
+	arg := CreateAccountParams{
 		Owner:    util.RandomOwner(),
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
@@ -120,11 +120,11 @@ func TestListAccount(t *testing.T) {
 		createRandomAccount(t)
 	}
 
-	var (
-		limit  int = 5
-		offset int = 2
-	)
-	accounts, err := testQueries.ListAccount(ctx, limit, offset)
+	arg := ListAccountParams{
+		Limit:  5,
+		Offset: 2,
+	}
+	accounts, err := testQueries.ListAccount(ctx, arg)
 	if err != nil {
 		t.Fatalf("ListAccount() func err : %s", err)
 	} else if len(accounts) != 5 {
