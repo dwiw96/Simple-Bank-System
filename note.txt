@@ -1,0 +1,9 @@
+API
+> (done) Send error for POST "/accounts" when input data is wrong.
+> (done) Add struct tags (json)
+> (done) Validate data from request body using tags
+> Make modified error on server side
+> Make modified error on database side using pgx error package
+> Change manual validator (If else) with validator package on account_test
+__________________________________________________________________________________
+
