@@ -7,12 +7,18 @@ import (
 
 	"simple-bank-system/api"
 	"simple-bank-system/db/services"
+	"simple-bank-system/util"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 func main() {
-	dbpool, err := pgxpool.Connect(context.Background(), "postgresql://db:secret@localhost:5432/bank?sslmode=disable")
+	config, err := util.LoadConfig(".")
+	if err != nil {
+		log.Fatal("Cannpt connect to db: ", err)
+	}
+
+	dbpool, err := pgxpool.Connect(context.Background(), config.DBSource)
 	if err != nil {
 		log.Fatal("Failed connect to db: ", err)
 	}
@@ -22,5 +28,5 @@ func main() {
 	defer cancel()
 
 	store := services.NewStore(dbpool)
-	api.NewServer(store, ctx)
+	api.NewServer(store, ctx, config.ServerAddress)
 }

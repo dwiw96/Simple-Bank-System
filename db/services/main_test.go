@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"simple-bank-system/util"
 	"testing"
 	"time"
 
@@ -19,8 +20,12 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	var err error
-	dbpool, err = pgxpool.Connect(context.Background(), "postgresql://db:secret@localhost:5432/bank?sslmode=disable")
+	config, err := util.LoadConfig("../..")
+	if err != nil {
+		log.Fatal("Cannont load config: ", err)
+	}
+
+	dbpool, err = pgxpool.Connect(context.Background(), config.DBSource)
 	if err != nil {
 		log.Fatal("cannot connect to DB: ", err)
 	}
@@ -30,8 +35,6 @@ func TestMain(m *testing.M) {
 
 	ctx, cancel = context.WithTimeout(context.Background(), 1000*time.Second)
 	defer cancel()
-
-	//NewCtx(ctx)
 
 	os.Exit(m.Run())
 }

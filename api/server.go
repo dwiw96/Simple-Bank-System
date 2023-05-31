@@ -19,8 +19,7 @@ type Server struct {
 
 // This func will create new "Server" instance, and setup all HTTP API routes for services on that server
 
-func NewServer(store *services.Store, ctx context.Context) {
-	address := ":8080"
+func NewServer(store *services.Store, ctx context.Context, address string) {
 	server := &Server{
 		store: store,
 		ctx:   ctx,
@@ -36,5 +35,5 @@ func NewServer(store *services.Store, ctx context.Context) {
 	router.DELETE("/accounts/:id", server.deleteAccount)
 
 	log.Println("Listening on localhost:", address)
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(address, router))
 }
