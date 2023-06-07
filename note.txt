@@ -1,9 +1,22 @@
+services
+> Make modified error on database side by read error send by postgres using pgx error package.
+__________________________________________________________________________________
+
 API
 > (done) Send error for POST "/accounts" when input data is wrong.
 > (done) Add struct tags (json)
 > (done) Validate data from request body using tags
-> Make modified error on server side
-> Make modified error on database side using pgx error package
+> Make modified error on server side by send spesific reason for the error using json.
 > Change manual validator (If else) with validator package on account_test
+> 'validAccount' >> Detect no data on database by check error send by postgres using 
+                    pgx error package
 __________________________________________________________________________________
 
+API/transfer
+> Error coverage :
+    - (done) different currency (from-to account, input-account)
+    - (done) not enough money to transfer
+__________________________________________________________________________________
+
+POSTGRES ERROR CODE:
+ERROR: new row for relation \"accounts\" violates check constraint \"accounts_balance_check\" (SQLSTATE 23514)
