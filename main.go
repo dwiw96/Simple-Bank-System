@@ -15,7 +15,7 @@ import (
 func main() {
 	config, err := util.LoadConfig(".")
 	if err != nil {
-		log.Fatal("Cannpt connect to db: ", err)
+		log.Fatal("Cannpt load config: ", err)
 	}
 
 	dbpool, err := pgxpool.Connect(context.Background(), config.DBSource)
