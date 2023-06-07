@@ -30,7 +30,7 @@ func translateError(err error, trans ut.Translator) (errs []string) {
 
 type createAccountRequest struct {
 	Owner    string `json:"owner" validate:"required"`
-	Currency string `json:"currency" validate:"required,oneof=IDR USD EUR"`
+	Currency string `json:"currency" validate:"required,currency"`
 }
 
 func (server *Server) createAccount(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -40,7 +40,7 @@ func (server *Server) createAccount(w http.ResponseWriter, r *http.Request, _ ht
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "failed to decode input data", (http.StatusInternalServerError))
-		json.NewEncoder(w).Encode(err)
+		json.NewEncoder(w).Encode(err.Error())
 		return
 	}
 
@@ -50,8 +50,16 @@ func (server *Server) createAccount(w http.ResponseWriter, r *http.Request, _ ht
 		Balance:  0,
 	}
 
-	validate := validator.New()
 	err = validate.Struct(req)
+	if err != nil {
+		http.Error(w, "Format input data is wrong", (http.StatusBadRequest))
+		err = json.NewEncoder(w).Encode(err.Error())
+		if err != nil {
+			http.Error(w, "Failed to encode error from validate func", (http.StatusInternalServerError))
+			return
+		}
+		return
+	}
 
 	//translate
 	english := en.New()
@@ -73,7 +81,7 @@ func (server *Server) createAccount(w http.ResponseWriter, r *http.Request, _ ht
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		http.Error(w, "failed to pass data into database", (http.StatusInternalServerError))
-		json.NewEncoder(w).Encode(err)
+		json.NewEncoder(w).Encode(err.Error())
 		return
 	}
 
