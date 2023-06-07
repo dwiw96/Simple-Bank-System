@@ -7,7 +7,7 @@ CREATE TYPE valid_currency AS ENUM ('IDR', 'USD', 'EUR');
 CREATE TABLE accounts (
     id BIGSERIAL PRIMARY KEY,
     owner VARCHAR NOT NULL, check (owner <> ''),
-    balance BIGINT NOT NULL,
+    balance BIGINT NOT NULL, check (balance >= 0),
     currency valid_currency NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
