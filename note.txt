@@ -20,3 +20,7 @@ ________________________________________________________________________________
 
 POSTGRES ERROR CODE:
 ERROR: new row for relation \"accounts\" violates check constraint \"accounts_balance_check\" (SQLSTATE 23514)
+__________________________________________________________________________________
+
+testing
+> Make func for testify output and input
