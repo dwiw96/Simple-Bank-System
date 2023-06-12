@@ -18,9 +18,22 @@ API/transfer
     - (done) not enough money to transfer
 __________________________________________________________________________________
 
-POSTGRES ERROR CODE:
-ERROR: new row for relation \"accounts\" violates check constraint \"accounts_balance_check\" (SQLSTATE 23514)
-__________________________________________________________________________________
-
 testing
 > Make func for testify output and input
+
+__________________________________________________________________________________
+
+DB Error coverage
+db/services/Account
+> (done) Make account for an owner that doesn't exist. | code:(1)
+> (done) Create more than 1 account with the same owner. | code:(2)
+> (done) Get account that doesn't exist.
+> (done) List account that doesn't exist.
+> Delete account that doesn't exist.
+__________________________________________________________________________________
+
+POSTGRES ERROR CODE:
+(1) "ERROR: insert or update on table \"accounts\" violates foreign key constraint \"accounts_owner_fkey\" (SQLSTATE 23503)"
+(2) "ERROR: duplicate key value violates unique constraint \"accounts_owner_currency_idx\" (SQLSTATE 23505)"
+"ERROR: new row for relation \"accounts\" violates check constraint \"accounts_balance_check\" (SQLSTATE 23514)"
+__________________________________________________________________________________
