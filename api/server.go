@@ -33,11 +33,14 @@ func NewServer(store *services.Store, ctx context.Context, address string) {
 
 	// "createAccount" is made to be a method of the server, so it get access to the "store" object
 	// in order to save new account ro the database
+	router.POST("/users", server.createUser)
+
 	router.POST("/accounts", server.createAccount)
 	router.GET("/accounts/:id", server.getAccount)
 	router.GET("/accounts", server.listAccounts)
 	router.PUT("/accounts/:id", server.updateAccount)
 	router.DELETE("/accounts/:id", server.deleteAccount)
+
 	router.POST("/transfers", server.createTransfer)
 
 	log.Println("Listening on localhost:", address)
