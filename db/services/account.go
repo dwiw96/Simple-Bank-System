@@ -2,9 +2,14 @@ package services
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"simple-bank-system/db/pkg"
+	"simple-bank-system/util"
+
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4"
 )
 
 type CreateAccountParams struct {
@@ -22,6 +27,17 @@ func (r *DB) CreateAccount(ctx context.Context, account CreateAccountParams) (*p
 		) RETURNING id, owner, balance, currency, created_at;`
 	err := r.db.QueryRow(ctx, query, account.Owner, account.Balance, account.Currency).Scan(&res.ID, &res.Owner, &res.Balance, &res.Currency, &res.CreatedAt)
 	if err != nil {
+		var pgxError *pgconn.PgError
+		if errors.As(err, &pgxError) {
+			// 23503 (foreign_key_violation) -> Create account for unexists user
+			if pgxError.Code == "23503" {
+				return nil, util.ErrAccUser
+			}
+			// 23505 (unique_violation) ->  Duplicate account with the same currency
+			if pgxError.Code == "23505" {
+				return nil, util.ErrDuplicate
+			}
+		}
 		return nil, err
 	}
 
@@ -32,7 +48,11 @@ func (r *DB) GetAccount(ctx context.Context, id int64) (*pkg.Account, error) {
 	row := r.db.QueryRow(ctx, "SELECT * FROM accounts WHERE id=$1;", &id)
 
 	var account pkg.Account
-	if err := row.Scan(&account.ID, &account.Owner, &account.Balance, &account.Currency, &account.CreatedAt); err != nil {
+	err := row.Scan(&account.ID, &account.Owner, &account.Balance, &account.Currency, &account.CreatedAt)
+	if err == pgx.ErrNoRows {
+		return nil, util.ErrNotExist
+	}
+	if err != nil {
 		return nil, err
 	}
 
@@ -54,6 +74,9 @@ func (r *DB) ListAccount(ctx context.Context, arg ListAccountParams) ([]pkg.Acco
 	for res.Next() {
 		var temp pkg.Account
 		if err := res.Scan(&temp.ID, &temp.Owner, &temp.Balance, &temp.Currency, &temp.CreatedAt); err != nil {
+			if err == pgx.ErrNoRows {
+				return nil, util.ErrNotExist
+			}
 			return nil, err
 		}
 		list = append(list, temp)
@@ -77,7 +100,7 @@ func (r *DB) UpdateAccount(ctx context.Context, arg UpdateAccountParams) error {
 	rowsAffected := res.RowsAffected()
 	if rowsAffected == 0 {
 		log.Println("Update Failed")
-		return err
+		return util.ErrUpdateFailed
 	}
 
 	return nil
