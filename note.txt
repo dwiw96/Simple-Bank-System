@@ -30,6 +30,9 @@ db/services/Account
 > (done) Get account that doesn't exist.
 > (done) List account that doesn't exist.
 > Delete account that doesn't exist.
+----------------------------------------------------------------------------------
+db/api/user
+> 
 __________________________________________________________________________________
 
 POSTGRES ERROR CODE:
