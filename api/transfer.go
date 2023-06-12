@@ -1,13 +1,13 @@
 package api
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
 	"simple-bank-system/db/services"
+	"simple-bank-system/util"
 
 	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
@@ -97,10 +97,8 @@ func (server *Server) validAccount(w http.ResponseWriter, id int64, currency str
 	//log.Println("1")
 	account, err := server.store.GetAccount(server.ctx, id)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			http.Error(w, "There are no data with your account ID", http.StatusNotFound)
-			json.NewEncoder(w).Encode(err.Error())
-			//w.Write([]byte("0"))
+		if err == util.ErrNotExist {
+			http.Error(w, err.Error(), http.StatusNotFound)
 			return false
 		}
 		http.Error(w, "Failed to check your account", http.StatusInternalServerError)

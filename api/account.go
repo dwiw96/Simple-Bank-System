@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"simple-bank-system/db/services"
+	"simple-bank-system/util"
 
 	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
@@ -34,7 +35,6 @@ type createAccountRequest struct {
 }
 
 func (server *Server) createAccount(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	w.Header().Add("Content-Type", "application/json")
 	var req createAccountRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -79,12 +79,16 @@ func (server *Server) createAccount(w http.ResponseWriter, r *http.Request, _ ht
 
 	account, err := server.store.CreateAccount(server.ctx, arg)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		switch err {
+		case util.ErrAccUser, util.ErrDuplicate:
+			http.Error(w, err.Error(), 403)
+			return
+		}
 		http.Error(w, "failed to pass data into database", (http.StatusInternalServerError))
 		json.NewEncoder(w).Encode(err.Error())
 		return
 	}
-
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(account)
 }
@@ -106,6 +110,10 @@ func (server *Server) getAccount(w http.ResponseWriter, r *http.Request, ps http
 
 	account, err := server.store.GetAccount(server.ctx, req.ID)
 	if err != nil {
+		if err == util.ErrNotExist {
+			http.Error(w, err.Error(), 403)
+			return
+		}
 		http.Error(w, "Can't get account", (http.StatusInternalServerError))
 		json.NewEncoder(w).Encode(err.Error())
 		return
@@ -158,6 +166,10 @@ func (server *Server) listAccounts(w http.ResponseWriter, r *http.Request, _ htt
 	}
 	accounts, err := server.store.ListAccount(server.ctx, arg)
 	if err != nil {
+		if err == util.ErrNotExist {
+			http.Error(w, err.Error(), 503)
+			return
+		}
 		http.Error(w, "Failed to get List", (http.StatusInternalServerError))
 		return
 	}
@@ -219,6 +231,10 @@ func (server *Server) updateAccount(w http.ResponseWriter, r *http.Request, ps h
 
 	err = server.store.UpdateAccount(server.ctx, arg)
 	if err != nil {
+		if err == util.ErrUpdateFailed {
+			http.Error(w, err.Error(), 403)
+			return
+		}
 		http.Error(w, "Failed parsing data into database", http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(err.Error())
 		return
