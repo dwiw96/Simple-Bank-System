@@ -7,9 +7,13 @@ import (
 )
 
 func createRandomUser(t *testing.T) pkg.User {
+	hashedPass, err := util.HashingPassword(util.RandomString(6))
+	if err != nil {
+		t.Error("Failed to hashing password, err: ", err)
+	}
 	arg := CreateUserParams{
 		Username:       util.RandomOwner(),
-		HashedPassword: "secret",
+		HashedPassword: hashedPass,
 		FullName:       util.RandomOwner(),
 		Email:          util.RandomEmail(),
 	}
@@ -18,26 +22,26 @@ func createRandomUser(t *testing.T) pkg.User {
 	if err != nil {
 		t.Fatalf("CreateUser QueryRow error: %v", err)
 	} else if user == nil {
-		t.Fatalf("user is empty")
+		t.Fatal("user is empty")
 	}
 
 	if user.Username != arg.Username {
-		t.Fatalf("Username name in database \"%s\" isn't same as arg \"%s\"", user.Username, arg.Username)
+		t.Errorf("Username name in database \"%s\" isn't same as arg \"%s\"", user.Username, arg.Username)
 	}
 	if user.HashedPassword != arg.HashedPassword {
-		t.Fatalf("HashedPassword in database \"%s\" isn't same as arg \"%s\"", user.HashedPassword, arg.HashedPassword)
+		t.Errorf("HashedPassword in database \"%s\" isn't same as arg \"%s\"", user.HashedPassword, arg.HashedPassword)
 	}
 	if user.FullName != arg.FullName {
-		t.Fatalf("FullName in database \"%s\" isn't same as arg \"%s\"", user.FullName, arg.FullName)
+		t.Errorf("FullName in database \"%s\" isn't same as arg \"%s\"", user.FullName, arg.FullName)
 	}
 	if user.Email != arg.Email {
-		t.Fatalf("Email in database \"%s\" isn't same as arg \"%s\"", user.Email, arg.Email)
+		t.Errorf("Email in database \"%s\" isn't same as arg \"%s\"", user.Email, arg.Email)
 	}
 	if user.PasswordChangeAt.IsZero() == true {
-		t.Fatalf("PasswordChangeAt isn't automatically generate")
+		t.Error("PasswordChangeAt isn't automatically generate")
 	}
 	if user.CreatedAt.IsZero() == true {
-		t.Fatalf("created_at is nill")
+		t.Error("created_at is nill")
 	}
 
 	return *user
@@ -55,21 +59,21 @@ func TestGetUser(t *testing.T) {
 	}
 
 	if user2.Username != user1.Username {
-		t.Fatalf("Username name in database \"%s\" isn't same as arg \"%s\"", user2.Username, user1.Username)
+		t.Errorf("Username name in database \"%s\" isn't same as arg \"%s\"", user2.Username, user1.Username)
 	}
 	if user2.HashedPassword != user1.HashedPassword {
-		t.Fatalf("HashedPassword in database \"%s\" isn't same as arg \"%s\"", user2.HashedPassword, user1.HashedPassword)
+		t.Errorf("HashedPassword in database \"%s\" isn't same as arg \"%s\"", user2.HashedPassword, user1.HashedPassword)
 	}
 	if user2.FullName != user1.FullName {
-		t.Fatalf("FullName in database \"%s\" isn't same as arg \"%s\"", user2.FullName, user1.FullName)
+		t.Errorf("FullName in database \"%s\" isn't same as arg \"%s\"", user2.FullName, user1.FullName)
 	}
 	if user2.Email != user1.Email {
-		t.Fatalf("Email in database \"%s\" isn't same as arg \"%s\"", user2.Email, user1.Email)
+		t.Errorf("Email in database \"%s\" isn't same as arg \"%s\"", user2.Email, user1.Email)
 	}
 	if user2.PasswordChangeAt.IsZero() == true {
-		t.Fatalf("PasswordChangeAt isn't automatically generate")
+		t.Error("PasswordChangeAt isn't automatically generate")
 	}
 	if user2.CreatedAt.IsZero() == true {
-		t.Fatalf("created_at is nill")
+		t.Error("created_at is nill")
 	}
 }
