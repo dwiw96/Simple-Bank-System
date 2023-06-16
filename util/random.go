@@ -54,3 +54,12 @@ func RandomCurrency() string {
 func RandomEmail() string {
 	return fmt.Sprintf("%s@email.com", RandomString(6))
 }
+
+func RandomByte(n int) ([]byte, error) {
+	res := make([]byte, n)
+	len, err := rand.Read(res)
+	if len != n {
+		return nil, err
+	}
+	return res, err
+}
