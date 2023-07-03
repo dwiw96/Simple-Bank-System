@@ -7,6 +7,7 @@ import (
 	"simple-bank-system/util"
 
 	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4"
 )
 
 type CreateUserParams struct {
@@ -43,12 +44,15 @@ func (r *DB) CreateUser(ctx context.Context, user CreateUserParams) (*pkg.User, 
 }
 
 func (r *DB) GetUser(ctx context.Context, username string) (*pkg.User, error) {
-	row := r.db.QueryRow(ctx, "SELECT * FROM accounts WHERE id=$1;", &username)
+	row := r.db.QueryRow(ctx, "SELECT * FROM users WHERE username=$1;", &username)
 
 	var user pkg.User
-	if err := row.Scan(&user.Username, &user.HashedPassword, &user.FullName, &user.Email); err != nil {
+	err := row.Scan(&user.Username, &user.HashedPassword, &user.FullName, &user.Email, &user.PasswordChangeAt, &user.CreatedAt)
+	if err == pgx.ErrNoRows {
+		return nil, util.ErrNotExist
+	}
+	if err != nil {
 		return nil, err
 	}
-
 	return &user, nil
 }
