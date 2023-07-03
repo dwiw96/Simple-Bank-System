@@ -32,7 +32,14 @@ db/services/Account
 > Delete account that doesn't exist.
 ----------------------------------------------------------------------------------
 db/api/user
-> 
+> spesific error for All parameter using key (ex. Key: 'createUserRequest.FullName)
+> spesific error for create already exist user
+----------------------------------------------------------------------------------
+db/api/
+> spesific error for updating unexists account
+> spesific error for delete unexists account
+> spesific error for transfer every possible error
+  (not enough balance, wrong id, wrong currency)
 __________________________________________________________________________________
 
 POSTGRES ERROR CODE:

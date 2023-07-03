@@ -15,7 +15,7 @@ import (
 func main() {
 	config, err := util.LoadConfig(".")
 	if err != nil {
-		log.Fatal("Cannpt load config: ", err)
+		log.Fatal("Cannot load config: ", err)
 	}
 
 	dbpool, err := pgxpool.Connect(context.Background(), config.DBSource)
@@ -28,5 +28,9 @@ func main() {
 	defer cancel()
 
 	store := services.NewStore(dbpool)
-	api.NewServer(store, ctx, config.ServerAddress)
+	server, err := api.NewServer(store, ctx, config)
+	if err != nil {
+		log.Fatal("Can't create server, \nerr: ", err)
+	}
+	server.Start(config.ServerAddress)
 }
