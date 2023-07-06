@@ -17,10 +17,10 @@ import (
 )
 
 type createUserRequest struct {
-	Username       string `json:"username" validate:"required"`
-	HashedPassword string `json:"password" validate:"required,min=6"`
-	FullName       string `json:"fullname" validate:"required"`
-	Email          string `json:"email" validate:"required,email"`
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password" validate:"required,min=6"`
+	FullName string `json:"fullname" validate:"required"`
+	Email    string `json:"email" validate:"required,email"`
 }
 
 type userResponse struct {
@@ -55,7 +55,7 @@ func (server *Server) createUser(w http.ResponseWriter, r *http.Request, _ httpr
 
 	arg := services.CreateUserParams{
 		Username:       req.Username,
-		HashedPassword: req.HashedPassword,
+		HashedPassword: req.Password,
 		FullName:       req.FullName,
 		Email:          req.Email,
 	}
