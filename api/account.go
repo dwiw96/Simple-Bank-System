@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"simple-bank-system/db/services"
+	"simple-bank-system/token"
 	"simple-bank-system/util"
 
 	"github.com/go-playground/locales/en"
@@ -30,7 +31,6 @@ func translateError(err error, trans ut.Translator) (errs []string) {
 }
 
 type createAccountRequest struct {
-	Owner    string `json:"owner" validate:"required"`
 	Currency string `json:"currency" validate:"required,currency"`
 }
 
@@ -44,8 +44,12 @@ func (server *Server) createAccount(w http.ResponseWriter, r *http.Request, _ ht
 		return
 	}
 
+	// access authorization payload inside context
+	// 'ctx.Value' return general interface, so we should cast it to token.payload object
+	authPayload := r.Context().Value("authPayloadKey").(*token.Payload)
+
 	arg := services.CreateAccountParams{
-		Owner:    req.Owner,
+		Owner:    authPayload.Username, // add authorization to create account handler
 		Currency: req.Currency,
 		Balance:  0,
 	}
@@ -118,6 +122,15 @@ func (server *Server) getAccount(w http.ResponseWriter, r *http.Request, ps http
 		json.NewEncoder(w).Encode(err.Error())
 		return
 	}
+
+	// access authorization payload inside context
+	// 'ctx.Value' return general interface, so we should cast it to token.payload object
+	authPayload := r.Context().Value("authPayloadKey").(*token.Payload)
+	if account.Owner != authPayload.Username {
+		http.Error(w, "account doesn't belong to you", (http.StatusUnauthorized))
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(account)
 }
@@ -144,7 +157,10 @@ func (server *Server) listAccounts(w http.ResponseWriter, r *http.Request, _ htt
 		return
 	}
 
+	authPayload := r.Context().Value("authPayloadKey").(*token.Payload)
+
 	arg := services.ListAccountParams{
+		Owner:  authPayload.Username,
 		Limit:  req.PageSize,
 		Offset: (req.PageID - 1) * req.PageSize,
 	}

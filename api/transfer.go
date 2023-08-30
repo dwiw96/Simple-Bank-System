@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"simple-bank-system/db/services"
+	"simple-bank-system/token"
 	"simple-bank-system/util"
 
 	"github.com/go-playground/locales/en"
@@ -62,10 +63,20 @@ func (server *Server) createTransfer(w http.ResponseWriter, r *http.Request, _ h
 		return
 	}
 
-	if !server.validAccount(w, req.FromAccountID, req.Currency) {
+	authPayload := r.Context().Value("authPayloadKey").(*token.Payload)
+
+	owner, valid := server.validAccount(w, req.FromAccountID, req.Currency)
+	if !valid {
 		return
 	}
-	if !server.validAccount(w, req.ToAccountID, req.Currency) {
+	log.Printf("owner: %s - auth: %s\n", *owner, authPayload.Username)
+	if *owner != authPayload.Username {
+		http.Error(w, "from_account isn't authorization", http.StatusUnauthorized)
+		return
+	}
+
+	_, valid = server.validAccount(w, req.ToAccountID, req.Currency)
+	if !valid {
 		return
 	}
 
@@ -93,25 +104,25 @@ func (server *Server) createTransfer(w http.ResponseWriter, r *http.Request, _ h
  * currency matches with input currency.
  */
 
-func (server *Server) validAccount(w http.ResponseWriter, id int64, currency string) bool {
+func (server *Server) validAccount(w http.ResponseWriter, id int64, currency string) (*string, bool) {
 	//log.Println("1")
 	account, err := server.store.GetAccount(server.ctx, id)
 	if err != nil {
 		if err == util.ErrNotExist {
 			http.Error(w, err.Error(), http.StatusNotFound)
-			return false
+			return nil, false
 		}
 		http.Error(w, "Failed to check your account", http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(err.Error())
-		return false
+		return nil, false
 	}
 
 	if account.Currency != currency {
 		err = fmt.Errorf("account [%d] currency mismatch: %s - %s", account.ID, account.Currency, currency)
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(err.Error())
-		return false
+		return nil, false
 	}
 
-	return true
+	return &account.Owner, true
 }
