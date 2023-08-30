@@ -1,0 +1,65 @@
+@startuml
+entity account {
+account_id : number <<PK>>
+--
+username : varchar
+--
+fullname : varchar
+--
+date_of_birth
+--
+address : varchar
+--
+postal_code : int
+--
+email : varchar
+--
+password : varchar
+--
+password_change_at: timestamptz
+--
+created_at : timestamptz
+}
+
+entity wallet {
+wallet_id : number <<PK>>
+--
+owner : varchar
+--
+name : varchar
+--
+balance : int
+--
+currency : varchar
+--
+created_at : timestamptz
+}
+
+entity entries {
+id : bigserial <<PK>>
+--
+account_id : int
+--
+amount: int
+--
+crated_at : timestamptz
+}
+
+entity transfer {
+id : bigserial <<PK>>
+--
+from_account_id : int
+--
+to_account_id: int
+--
+amount : int
+--
+created_at : timestamptz
+}
+
+account ||--|{ wallet
+account ||--|| transfer
+account ||--|| entries
+wallet ||--||entries
+wallet ||--|| transfer
+@enduml
