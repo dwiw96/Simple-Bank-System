@@ -60,26 +60,33 @@ func (r *DB) GetAccount(ctx context.Context, id int64) (*pkg.Account, error) {
 }
 
 type ListAccountParams struct {
+	Owner  string
 	Limit  int
 	Offset int
 }
 
 func (r *DB) ListAccount(ctx context.Context, arg ListAccountParams) ([]pkg.Account, error) {
-	res, err := r.db.Query(ctx, "SELECT * FROM accounts ORDER BY id LIMIT $1 OFFSET $2;", arg.Limit, arg.Offset)
+	log.Printf("owner: %s - limit: %d - offset: %d\n", arg.Owner, arg.Limit, arg.Offset)
+	query := `SELECT * FROM accounts WHERE owner=$1 ORDER BY id LIMIT $2 OFFSET $3;`
+	res, err := r.db.Query(ctx, query, arg.Owner, arg.Limit, arg.Offset)
 	if err != nil {
+		log.Println("err 1")
 		return nil, err
 	}
 
 	var list []pkg.Account
 	for res.Next() {
 		var temp pkg.Account
+		log.Println("pass 1")
 		if err := res.Scan(&temp.ID, &temp.Owner, &temp.Balance, &temp.Currency, &temp.CreatedAt); err != nil {
+			log.Println("err 2")
 			if err == pgx.ErrNoRows {
 				return nil, util.ErrNotExist
 			}
 			return nil, err
 		}
 		list = append(list, temp)
+		log.Println("pass 2")
 	}
 
 	return list, nil
