@@ -63,3 +63,7 @@ func RandomByte(n int) ([]byte, error) {
 	}
 	return res, err
 }
+
+func RandomPassword() string {
+	return RandomString(5) + fmt.Sprint(rand.Intn(10))
+}
