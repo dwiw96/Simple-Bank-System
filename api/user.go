@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -44,6 +45,8 @@ func newUserResponse(user *pkg.User) userResponse {
 }
 
 func (server *Server) createUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	log.Println("----- Create new user handler")
+
 	var req createUserRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -82,7 +85,8 @@ func (server *Server) createUser(w http.ResponseWriter, r *http.Request, _ httpr
 		http.Error(w, "Format input data is wrong", (http.StatusBadRequest))
 		err = json.NewEncoder(w).Encode(valErr)
 		if err != nil {
-			fmt.Println("Encode err: ", err)
+			log.Println("Encode err: ", err)
+			http.Error(w, err.Error(), (http.StatusBadRequest))
 		}
 		return
 	}
@@ -98,6 +102,7 @@ func (server *Server) createUser(w http.ResponseWriter, r *http.Request, _ httpr
 		return
 	}
 	response := newUserResponse(user)
+
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
@@ -159,7 +164,6 @@ func (server *Server) loginUser(w http.ResponseWriter, r *http.Request, _ httpro
 		AccessToken: token,
 		User:        newUserResponse(user),
 	}
-
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
