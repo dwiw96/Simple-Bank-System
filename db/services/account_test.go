@@ -116,11 +116,13 @@ func TestDeleteAccount(t *testing.T) {
 }
 
 func TestListAccount(t *testing.T) {
+	var account pkg.Account
 	for i := 0; i < 10; i++ {
-		createRandomAccount(t)
+		account, _ = createRandomAccount(t)
 	}
 
 	arg := ListAccountParams{
+		Owner:  account.Owner,
 		Limit:  5,
 		Offset: 2,
 	}
