@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/julienschmidt/httprouter"
+	"github.com/rs/cors"
 )
 
 // "Server" will serves all htpp request.
@@ -20,6 +21,7 @@ type Server struct {
 	store      *services.Store
 	ctx        context.Context
 	router     *httprouter.Router
+	handler    http.Handler
 	tokenMaker token.Maker
 	duration   time.Duration
 }
@@ -42,14 +44,16 @@ func NewServer(store *services.Store, ctx context.Context, config util.Config) (
 	validate = validator.New()
 	validate.RegisterValidation("currency", validCurrency)
 
-	router := server.setupRouter()
+	router, handler := server.setupRouter()
 	server = &Server{
-		router: router,
+		router:  router,
+		handler: handler,
 	}
 	return server, nil
 }
 
-func (server *Server) setupRouter() *httprouter.Router {
+// func (server *Server) setupRouter() *httprouter.Router {
+func (server *Server) setupRouter() (*httprouter.Router, http.Handler) {
 	router := httprouter.New()
 
 	// "createAccount" is made to be a method of the server, so it get access to the "store" object
@@ -57,20 +61,23 @@ func (server *Server) setupRouter() *httprouter.Router {
 	router.POST("/users", server.createUser)
 	router.POST("/users/login", server.loginUser)
 
-	router.POST("/accounts", server.createAccount)
-	router.GET("/accounts/:id", server.getAccount)
-	router.GET("/accounts", server.listAccounts)
-	router.PUT("/accounts/:id", server.updateAccount)
-	router.DELETE("/accounts/:id", server.deleteAccount)
+	// Add middleware auth to handler
+	router.POST("/accounts", authMiddleware(server.tokenMaker, server.createAccount))
+	router.GET("/accounts/:id", authMiddleware(server.tokenMaker, server.getAccount))
+	router.GET("/accounts", authMiddleware(server.tokenMaker, server.listAccounts))
+	router.PUT("/accounts/:id", authMiddleware(server.tokenMaker, server.updateAccount))
+	router.DELETE("/accounts/:id", authMiddleware(server.tokenMaker, server.deleteAccount))
 
-	router.POST("/transfers", server.createTransfer)
+	router.POST("/transfers", authMiddleware(server.tokenMaker, server.createTransfer))
 
-	return router
+	handler := cors.Default().Handler(router)
+
+	return router, handler
 }
 
 func (server *Server) Start(address string) {
 	log.Println("Listening on localhost:", address)
-	log.Fatal(http.ListenAndServe(address, server.router))
+	log.Fatal(http.ListenAndServe(address, server.handler))
 }
 
 func CreatePasetoMaker(key []byte) (token.Maker, error) {
