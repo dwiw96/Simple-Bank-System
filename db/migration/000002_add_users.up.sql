@@ -1,24 +1,34 @@
-CREATE TABLE users (
-    username VARCHAR PRIMARY KEY,
-    hashed_password VARCHAR NOT NULL,
-    full_name VARCHAR NOT NULL,
-    email VARCHAR UNIQUE NOT NULL,
-    password_change_at TIMESTAMPTZ DEFAULT '0001-01-01 00:00:00Z' NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
-);
-
-ALTER TABLE accounts ADD FOREIGN KEY (owner) REFERENCES users (username);
+--ALTER TABLE wallets ADD FOREIGN KEY (owner) REFERENCES accounts (username);
 
 /*
- * 1 user can have multiple accounts, but those accounts should have different currencies. So, 
- * 2 accounts under the same user, both can't have 'USD' currencies.
- * unique index is set to 'accounts' table use to solve that problem.
+ * 1 account can have multiple wallets, but those wallets should have different currencies. So, 
+ * 2 wallets under the same user, both can't have 'USD' currencies.
+ * unique index is set to 'wallets' table use to solve that problem.
  */
-CREATE UNIQUE INDEX ON accounts (owner, currency);
+--CREATE UNIQUE INDEX ON wallets (owner, currency);
+--CREATE UNIQUE INDEX ON wallets (currency);
 
 /*
- * Another way to prevent multiple accounts under the same user have same currrencies is to add
+ * To prevent multiple wallets under the same user have same currrencies is to add
  * a unique constraint for the pair of 'owner' and 'currency' on the account table.
  */
+--ALTER TABLE wallets ADD CONSTRAINT account_currency_key UNIQUE (account_id, currency);
+ALTER TABLE wallets ADD CONSTRAINT account_name_key UNIQUE (account_id, name);
 
---ALTER TABLE accounts ADD CONSTRAINT owner_currency_key UNIQUE (owner, currency);
+--ALTER TABLE entries ADD FOREIGN KEY (account_id) REFERENCES accounts(id);
+--ALTER TABLE transfers ADD FOREIGN KEY (account_id) REFERENCES accounts(id);
+
+CREATE TABLE addresses (
+    id INT GENERATED ALWAYS AS IDENTITY CONSTRAINT pk_addresses_id PRIMARY KEY,
+    provinces VARCHAR NOT NULL CONSTRAINT ck_addresses_province_empty CHECK (provinces <>''),
+    city VARCHAR NOT NULL CONSTRAINT ck_addresses_city_empty CHECK (city <>''),
+    zip INT NOT NULL CONSTRAINT ck_zip_zero CHECK (zip > 0),
+    street TEXT NOT NULL CONSTRAINT ck_street_zero CHECK (street <> '')
+);
+
+ALTER TABLE accounts ADD CONSTRAINT fk_accounts_address FOREIGN KEY (address) REFERENCES addresses(id);
+
+ALTER TABLE accounts ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE wallets ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE entries ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE transfers ADD COLUMN deleted_at TIMESTAMPTZ;

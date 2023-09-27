@@ -1,5 +1,6 @@
 --Order position is important
-DROP TABLE IF EXISTS entries;
-DROP TABLE IF EXISTS transfers;
+--ALTER TABLE IF EXISTS wallets DROP CONSTRAINT IF EXISTS accounts_owner_currency_idx ;
+--ALTER TABLE IF EXISTS wallets DROP CONSTRAINT IF EXISTS accounts_owner_fkey;
 DROP TABLE IF EXISTS accounts;
-DROP TYPE IF EXISTS valid_currency;
+DROP TABLE IF EXISTS addresses;
+DROP TABLE IF EXISTS schema_migrations;
