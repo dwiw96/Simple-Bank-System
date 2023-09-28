@@ -16,12 +16,13 @@ func TestJWTMaker(t *testing.T) {
 		t.Fatal("NewJWTMaker error, \nerr: ", err)
 	}
 
-	username := util.RandomOwner()
+	//username := util.RandomOwner()
+	accountID := util.RandomInt(1, 100)
 	duration := time.Minute
 	issuedAt := time.Now()
 	expiredAt := issuedAt.Add(duration)
 
-	token, err := maker.CreateToken(username, duration)
+	token, err := maker.CreateToken(accountID, duration)
 	if err != nil {
 		t.Error("CreateToken error, \nerr: ", err)
 	}
@@ -37,8 +38,8 @@ func TestJWTMaker(t *testing.T) {
 		t.Error("payload from verify token is empty")
 	}
 
-	if payload.Username != username {
-		t.Errorf("input username %s != %s payload.Username", username, payload.Username)
+	if payload.AccountID != accountID {
+		t.Errorf("input accountID %d != %d payload.AccountID", accountID, payload.AccountID)
 	}
 	if payload.IssuedAt.After(issuedAt.Add(1*time.Second)) && payload.IssuedAt.Before(issuedAt.Add(-1*time.Second)) {
 		t.Errorf("input issuedAt %v != %v payload.IssuedAt", issuedAt, payload.IssuedAt)
@@ -54,10 +55,11 @@ func TestExpiredJWTToken(t *testing.T) {
 		t.Fatal("Failed to create jwt maker, \nerr: ", err)
 	}
 
-	username := util.RandomOwner()
+	//username := util.RandomOwner()
+	accountID := util.RandomInt(1, 100)
 	duration := -time.Minute
 
-	token, err := maker.CreateToken(username, duration)
+	token, err := maker.CreateToken(accountID, duration)
 	if err != nil {
 		t.Error("Failed to create token, \nerr: ", err)
 	}
@@ -72,10 +74,11 @@ func TestExpiredJWTToken(t *testing.T) {
 }
 
 func TestInvalidJWTTokenAlgNode(t *testing.T) {
-	username := util.RandomOwner()
+	//username := util.RandomOwner()
+	accountID := util.RandomInt(1, 100)
 	duration := time.Minute
 
-	payload, err := NewPayLoad(username, duration)
+	payload, err := NewPayLoad(accountID, duration)
 	if err != nil {
 		t.Error("Failed to create new payload, \nerr: ", err)
 	}

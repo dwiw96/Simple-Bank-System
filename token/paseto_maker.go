@@ -34,20 +34,20 @@ func NewPasetoMaker(key []byte) (Maker, error) {
 	return &PasetoMaker{symmetricKey}, nil
 }
 
-func (maker *PasetoMaker) CreateToken(username string, duration time.Duration) (string, error) {
+func (maker *PasetoMaker) CreateToken(ID int64, duration time.Duration) (string, error) {
 	tokenID, err := uuid.NewRandom()
 	if err != nil {
 		return "", err
 	}
 
 	payload := map[string]interface{}{
-		"ID":       tokenID,
-		"username": username,
-		"iat":      time.Now(),
-		"exp":      time.Now().Add(duration),
+		"ID":         tokenID,
+		"account_id": ID,
+		"iat":        time.Now(),
+		"exp":        time.Now().Add(duration),
 	}
 	/*fmt.Println("Create payload.ID: ", payload["ID"])
-	fmt.Println("Create payload.Username: ", payload["username"])
+	fmt.Println("Create payload.AccountID: ", payload["AccountID"])
 	fmt.Println("Create payload.IssuedAT: ", payload["iat"])
 	fmt.Println("Create payload.ExpiredAt: ", payload["exp"])
 	fmt.Println()*/
@@ -66,13 +66,13 @@ func (maker *PasetoMaker) VerifyToken(encrypted string) (*Payload, error) {
 	}
 	payload := Payload{}
 	token.Get("ID", &payload.ID)
-	token.Get("username", &payload.Username)
+	token.Get("account_id", &payload.AccountID)
 	token.Get("iat", &payload.IssuedAt)
 	token.Get("exp", &payload.ExpiredAt)
 	//claims := token.Claims()
 	/*fmt.Println("Verify payload: ", payload)
 	fmt.Println("Verify payload.ID: ", payload.ID)
-	fmt.Println("Verify payload.Username: ", payload.Username)
+	fmt.Println("Verify payload.AccountID: ", payload.AccountID)
 	fmt.Println("Verify payload.IssuedAt: ", payload.IssuedAt)
 	fmt.Println("Verify payload.CreatedAt: ", payload.ExpiredAt)*/
 
