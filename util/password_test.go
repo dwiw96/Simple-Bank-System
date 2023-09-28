@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"testing"
 
 	"golang.org/x/crypto/bcrypt"
@@ -14,7 +13,7 @@ func TestPassword(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	fmt.Println("HashedPassword1: ", HashedPassword1)
+
 	if HashedPassword1 == "" {
 		t.Errorf("hashed password is empty")
 	}
@@ -34,7 +33,7 @@ func TestPassword(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	fmt.Println("HashedPassword2: ", HashedPassword2)
+
 	if HashedPassword2 == "" {
 		t.Errorf("hashed password is empty")
 	}
