@@ -2,39 +2,70 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
-	"strconv"
+	"time"
 
+	"simple-bank-system/db/pkg"
 	"simple-bank-system/db/services"
-	"simple-bank-system/token"
 	"simple-bank-system/util"
 
 	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
-	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
 	"github.com/julienschmidt/httprouter"
 )
 
-func translateError(err error, trans ut.Translator) (errs []string) {
-	if err == nil {
-		return nil
-	}
-
-	validatorErrs := err.(validator.ValidationErrors)
-	for _, e := range validatorErrs {
-		translatedErr := fmt.Errorf(e.Translate(trans))
-		errs = append(errs, translatedErr.Error())
-	}
-	return errs
+type createAccountRequest struct {
+	Username    string        `json:"username" validate:"required,min=3"`
+	Password    string        `json:"password" validate:"required,min=6"`
+	FullName    string        `json:"fullname" validate:"required"`
+	DateOfBirth string        `json:"date_of_birth" validate:"required"`
+	Address     pkg.Addresses `json:"address" validate:"required"`
+	Email       string        `json:"email" validate:"required,email"`
 }
 
-type createAccountRequest struct {
-	Currency string `json:"currency" validate:"required,currency"`
+type accountResponse struct {
+	AccountNumber    int64
+	Username         string
+	FullName         string
+	DateOfBirth      string
+	Address          addressResponse
+	Email            string
+	PasswordChangeAt time.Time
+	CreatedAt        time.Time
+}
+
+type addressResponse struct {
+	Provinces string `json:"province" validate:"required"`
+	City      string `json:"city" validate:"required"`
+	ZIP       int64  `json:"zip" validate:"required"`
+	Street    string `json:"street" validate:"required"`
+}
+
+// Create func to pass user data in separated func from 'createUser()'
+// because it has pasword data
+func newaccountResponse(account *pkg.Account) accountResponse {
+	return accountResponse{
+		AccountNumber: account.AccountNumber,
+		Username:      account.Username,
+		FullName:      account.FullName,
+		DateOfBirth:   account.DateOfBirth.Format(time.DateOnly),
+		Address: addressResponse{
+			Provinces: account.Address.Provinces,
+			City:      account.Address.City,
+			ZIP:       account.Address.ZIP,
+			Street:    account.Address.Street,
+		},
+		Email:            account.Email,
+		PasswordChangeAt: account.PasswordChangeAt,
+		CreatedAt:        account.CreatedAt,
+	}
 }
 
 func (server *Server) createAccount(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	//log.Println("----- Create new user handler")
+
 	var req createAccountRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -44,22 +75,38 @@ func (server *Server) createAccount(w http.ResponseWriter, r *http.Request, _ ht
 		return
 	}
 
-	// access authorization payload inside context
-	// 'ctx.Value' return general interface, so we should cast it to token.payload object
-	authPayload := r.Context().Value("authPayloadKey").(*token.Payload)
-
-	arg := services.CreateAccountParams{
-		Owner:    authPayload.Username, // add authorization to create account handler
-		Currency: req.Currency,
-		Balance:  0,
-	}
-
-	err = validate.Struct(req)
+	date, err := util.GetDOB(req.DateOfBirth)
 	if err != nil {
 		http.Error(w, "Format input data is wrong", (http.StatusBadRequest))
 		err = json.NewEncoder(w).Encode(err.Error())
 		if err != nil {
-			http.Error(w, "Failed to encode error from validate func", (http.StatusInternalServerError))
+			http.Error(w, "Failed to encode error from validate func", (http.StatusUnprocessableEntity))
+			return
+		}
+		return
+	}
+
+	arg := services.CreateAccountParams{
+		Username:       req.Username,
+		HashedPassword: req.Password,
+		FullName:       req.FullName,
+		DateOfBirth:    date,
+		Address: pkg.Addresses{
+			Provinces: req.Address.Provinces,
+			City:      req.Address.City,
+			ZIP:       req.Address.ZIP,
+			Street:    req.Address.Street,
+		},
+		Email: req.Email,
+	}
+
+	err = validate.Struct(req)
+	//log.Println("err:", err)
+	if err != nil {
+		http.Error(w, "Format input data is wrong", (http.StatusUnprocessableEntity))
+		err = json.NewEncoder(w).Encode(err.Error())
+		if err != nil {
+			http.Error(w, "Failed to encode error from validate func", (http.StatusUnprocessableEntity))
 			return
 		}
 		return
@@ -73,18 +120,37 @@ func (server *Server) createAccount(w http.ResponseWriter, r *http.Request, _ ht
 
 	valErr := translateError(err, trans)
 	if err != nil {
-		http.Error(w, "Format input data is wrong", (http.StatusBadRequest))
+		http.Error(w, "Failed to translate", (http.StatusBadRequest))
 		err = json.NewEncoder(w).Encode(valErr)
 		if err != nil {
-			fmt.Println("Encode err: ", err)
+			log.Println("Encode err: ", err)
+			http.Error(w, err.Error(), (http.StatusBadRequest))
 		}
 		return
 	}
 
 	account, err := server.store.CreateAccount(server.ctx, arg)
+	//log.Println("--- (done)Create account:", account)
 	if err != nil {
-		switch err {
-		case util.ErrAccUser, util.ErrDuplicate:
+		//log.Println("--- (err)CreateAccount")
+		code := accErrHandling(err)
+		http.Error(w, "failed to pass data into database", code)
+		json.NewEncoder(w).Encode(err.Error())
+		return
+	}
+	response := newaccountResponse(account)
+
+	walletArg := services.CreateWalletParams{
+		AccountID:    account.ID,
+		Name:         "Primary Wallet",
+		WalletNumber: account.AccountNumber,
+		Currency:     "IDR",
+		Balance:      1000000,
+	}
+
+	_, err = server.store.CreatePrimaryWallet(server.ctx, walletArg)
+	if err != nil {
+		if err == util.ErrUsernameEmpty {
 			http.Error(w, err.Error(), 403)
 			return
 		}
@@ -92,207 +158,76 @@ func (server *Server) createAccount(w http.ResponseWriter, r *http.Request, _ ht
 		json.NewEncoder(w).Encode(err.Error())
 		return
 	}
+
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(account)
+	json.NewEncoder(w).Encode(response)
 }
 
-type getAccountRequest struct {
-	ID int64
+type loginRequest struct {
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password" validate:"required"`
 }
 
-func (server *Server) getAccount(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	w.Header().Add("Content-Type", "application/json")
-	var req getAccountRequest
-	var err error
+type loginResponse struct {
+	AccessToken string          `json:"access_token"`
+	Account     accountResponse `json:"account"`
+}
 
-	req.ID, err = strconv.ParseInt(ps.ByName("id"), 10, 64)
+func (server *Server) loginAccount(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	var req loginRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, "failed to convert url parameter to int", (http.StatusInternalServerError))
+		log.Println("--- (1) login, err:", err)
+		http.Error(w, "Failed to decode login data", http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err.Error())
 		return
 	}
 
-	account, err := server.store.GetAccount(server.ctx, req.ID)
+	account, err := server.store.GetAccount(server.ctx, req.Username)
 	if err != nil {
-		if err == util.ErrNotExist {
-			http.Error(w, err.Error(), 403)
-			return
+		log.Println("--- (2) login, err:", err)
+		http.Error(w, "account with input username doesn't exist", (http.StatusBadRequest))
+		json.NewEncoder(w).Encode(err.Error())
+		return
+	}
+
+	err = util.VerifyPassword(req.Password, account.HashedPassword)
+	if err != nil {
+		log.Println("--- (3) login, err:", err)
+		http.Error(w, "Your password is wrong", http.StatusBadRequest)
+		json.NewEncoder(w).Encode(err.Error())
+		return
+	}
+
+	token, err := server.tokenMaker.CreateToken(account.ID, server.duration)
+	if err != nil {
+		log.Println("--- (4) login, err:", err)
+		http.Error(w, "Failed to create encryted token", http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err.Error())
+		return
+	}
+
+	response := loginResponse{
+		AccessToken: token,
+		Account:     newaccountResponse(account),
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+func accErrHandling(err error) int {
+	if err == util.ErrUsernameExists || err == util.ErrEmailExists {
+		log.Println("--- (err)ErrHandling-1, err:", err)
+		return http.StatusConflict
+	}
+
+	for i := range util.ErrReturn {
+		if err == util.ErrReturn[i] {
+			log.Println("--- (err)ErrHandling-2, err:", err)
+			return http.StatusUnprocessableEntity
 		}
-		http.Error(w, "Can't get account", (http.StatusInternalServerError))
-		json.NewEncoder(w).Encode(err.Error())
-		return
 	}
-
-	// access authorization payload inside context
-	// 'ctx.Value' return general interface, so we should cast it to token.payload object
-	authPayload := r.Context().Value("authPayloadKey").(*token.Payload)
-	if account.Owner != authPayload.Username {
-		http.Error(w, "account doesn't belong to you", (http.StatusUnauthorized))
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(account)
-}
-
-type listAccountsRequest struct {
-	PageID   int `URI:"page_id" validate:"required,min=1"`
-	PageSize int `URI:"page_size" validate:"required,min=1,max=10"`
-}
-
-func (server *Server) listAccounts(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	w.Header().Add("Content-Type", "application/json")
-
-	var req listAccountsRequest
-	var err error
-
-	req.PageID, err = strconv.Atoi(r.URL.Query().Get("page_id"))
-	if err != nil {
-		http.Error(w, "Failed convert page_id query to int", (http.StatusInternalServerError))
-		return
-	}
-	req.PageSize, err = strconv.Atoi(r.URL.Query().Get("page_size"))
-	if err != nil {
-		http.Error(w, "Failed convert page_size query to int", (http.StatusInternalServerError))
-		return
-	}
-
-	authPayload := r.Context().Value("authPayloadKey").(*token.Payload)
-
-	arg := services.ListAccountParams{
-		Owner:  authPayload.Username,
-		Limit:  req.PageSize,
-		Offset: (req.PageID - 1) * req.PageSize,
-	}
-
-	validate := validator.New()
-	err = validate.Struct(req)
-
-	//translate
-	english := en.New()
-	uni := ut.New(english, english)
-	trans, _ := uni.GetTranslator("en")
-	_ = en_translations.RegisterDefaultTranslations(validate, trans)
-
-	valErr := translateError(err, trans)
-	if valErr != nil {
-		http.Error(w, "Format input data is wrong", (http.StatusBadRequest))
-		json.NewEncoder(w).Encode(valErr)
-		return
-	}
-	accounts, err := server.store.ListAccount(server.ctx, arg)
-	if err != nil {
-		if err == util.ErrNotExist {
-			http.Error(w, err.Error(), 503)
-			return
-		}
-		http.Error(w, "Failed to get List", (http.StatusInternalServerError))
-		return
-	}
-	if accounts == nil {
-		http.Error(w, "There are no data", http.StatusBadRequest)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(accounts)
-}
-
-type updateAccountRequest struct {
-	ID      int64 `validate:"required,min=1"`
-	Balance int64 `json:"balance" validate:"required"`
-}
-
-func (server *Server) updateAccount(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	var req updateAccountRequest
-	var err error
-
-	req.ID, err = strconv.ParseInt(ps.ByName("id"), 10, 64)
-	if err != nil {
-		http.Error(w, "Failed convert data to int or data is nill", http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err.Error())
-		return
-	}
-
-	fmt.Println("id: ", req.ID)
-
-	err = json.NewDecoder(r.Body).Decode(&req)
-	fmt.Println("balance: ", req.Balance)
-	if err != nil {
-		http.Error(w, "Failed to get input data", http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err.Error())
-		return
-	}
-
-	arg := services.UpdateAccountParams{
-		ID:      req.ID,
-		Balance: req.Balance,
-	}
-
-	validate := validator.New()
-	err = validate.Struct(req)
-
-	//translate
-	english := en.New()
-	uni := ut.New(english, english)
-	trans, _ := uni.GetTranslator("en")
-	_ = en_translations.RegisterDefaultTranslations(validate, trans)
-
-	valErr := translateError(err, trans)
-	if valErr != nil {
-		http.Error(w, "Format input data is wrong", (http.StatusBadRequest))
-		json.NewEncoder(w).Encode(valErr)
-		return
-	}
-
-	err = server.store.UpdateAccount(server.ctx, arg)
-	if err != nil {
-		if err == util.ErrUpdateFailed {
-			http.Error(w, err.Error(), 403)
-			return
-		}
-		http.Error(w, "Failed parsing data into database", http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err.Error())
-		return
-	}
-
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("Data modified")
-}
-
-func (server *Server) deleteAccount(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	ID, err := strconv.ParseInt(ps.ByName("id"), 10, 64)
-	if err != nil {
-		http.Error(w, "Failed convert to int", http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err.Error())
-		return
-	}
-
-	validate := validator.New()
-	err = validate.Var(ID, "required")
-
-	//translate
-	english := en.New()
-	uni := ut.New(english, english)
-	trans, _ := uni.GetTranslator("en")
-	_ = en_translations.RegisterDefaultTranslations(validate, trans)
-
-	valErr := translateError(err, trans)
-	if valErr != nil {
-		http.Error(w, "Format input data is wrong", (http.StatusBadRequest))
-		json.NewEncoder(w).Encode(valErr)
-		return
-	}
-
-	err = server.store.DeleteAccount(server.ctx, ID)
-	if err != nil {
-		http.Error(w, "Failed passing data to database", http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err.Error())
-		return
-	}
-
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("Data deleted!")
+	return http.StatusBadRequest
 }

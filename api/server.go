@@ -58,17 +58,20 @@ func (server *Server) setupRouter() (*httprouter.Router, http.Handler) {
 
 	// "createAccount" is made to be a method of the server, so it get access to the "store" object
 	// in order to save new account ro the database
-	router.POST("/users", server.createUser)
-	router.POST("/users/login", server.loginUser)
+	router.POST("/account", server.createAccount)
+	router.POST("/account/login", server.loginAccount)
 
 	// Add middleware auth to handler
-	router.POST("/accounts", authMiddleware(server.tokenMaker, server.createAccount))
-	router.GET("/accounts/:id", authMiddleware(server.tokenMaker, server.getAccount))
-	router.GET("/accounts", authMiddleware(server.tokenMaker, server.listAccounts))
-	router.PUT("/accounts/:id", authMiddleware(server.tokenMaker, server.updateAccount))
-	router.DELETE("/accounts/:id", authMiddleware(server.tokenMaker, server.deleteAccount))
+	router.POST("/wallet", authMiddleware(server.tokenMaker, server.createWallet))
+	router.GET("/wallet/:number", authMiddleware(server.tokenMaker, server.getWallet))
+	router.GET("/wallet", authMiddleware(server.tokenMaker, server.listWallets))
+	router.PUT("/wallet/update/:number", authMiddleware(server.tokenMaker, server.updateWallet))
+	router.PUT("/wallet/updateInfo/:number", authMiddleware(server.tokenMaker, server.updateWalletInfo))
+	router.DELETE("/wallet/delete/:number", authMiddleware(server.tokenMaker, server.deleteWallet))
 
-	router.POST("/transfers", authMiddleware(server.tokenMaker, server.createTransfer))
+	router.POST("/transfer", authMiddleware(server.tokenMaker, server.createTransfer))
+	//router.GET("/transfer/:number", authMiddleware(server.tokenMaker, server.createTransfer))
+	//router.GET("/transfer/list/:number", authMiddleware(server.tokenMaker, server.listTransfer))
 
 	handler := cors.Default().Handler(router)
 
