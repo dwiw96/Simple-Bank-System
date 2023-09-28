@@ -11,12 +11,12 @@ migrateUp:
 migrateUp1:
 	migrate -path db/migration -database "postgresql://db:secret@localhost:5432/bank?sslmode=disable" -verbose up 1
 migrateDown:
-	migrate -path db/migration -
+	migrate -path db/migration -database "postgresql://db:secret@localhost:5432/bank?sslmode=disable" -verbose down
 # The number 1 here means that we only want to rollback 1 last migration, or more precisely, just run the last down migration version that was applied before.	
 migrateDown1:
 	migrate -path db/migration -database "postgresql://db:secret@localhost:5432/bank?sslmode=disable" -verbose down 1
 migrateForce:
-	migrate -path db/migration -database "postgresql://db:secret@localhost:5432/bank?sslmode=disable" force 
+	migrate -path db/migration -database "postgresql://db:secret@localhost:5432/bank?sslmode=disable" force $(v)
 
 server:
 	go run main.go
