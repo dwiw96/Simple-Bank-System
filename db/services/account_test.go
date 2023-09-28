@@ -1,141 +1,200 @@
 package services
 
 import (
-	"database/sql"
-	"errors"
-
-	//"log"
-	"testing"
-
 	"simple-bank-system/db/pkg"
 	"simple-bank-system/util"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func createRandomAccount(t *testing.T) (pkg.Account, CreateAccountParams) {
+func createRandomAccount(t *testing.T) pkg.Account {
+	hashedPass, err := util.HashingPassword(util.RandomString(6))
+	if err != nil {
+		t.Error("Failed to hashing password, err: ", err)
+	}
+
+	dobInput := util.RandomDate()
+	date, err := util.GetDOB(dobInput)
+	require.NoError(t, err)
+
+	prov, city, zip := util.RandomAdress()
 	arg := CreateAccountParams{
-		Owner:    util.RandomOwner(),
-		Balance:  util.RandomMoney(),
-		Currency: util.RandomCurrency(),
+		Username:       util.RandomOwner(),
+		HashedPassword: hashedPass,
+		FullName:       util.RandomOwner(),
+		Email:          util.RandomEmail(),
+		DateOfBirth:    date,
+		Address: pkg.Addresses{
+			Provinces: prov,
+			City:      city,
+			ZIP:       zip,
+			Street:    "Jalan Raya Labuan, Km.19, Rt/Rw 01/02",
+		},
 	}
 
 	account, err := testQueries.CreateAccount(ctx, arg)
-	if err != nil {
-		t.Fatalf("QueryRow func error = %v", err)
-	} else if account == nil {
-		t.Fatalf("account is empty")
-	}
 
-	return *account, arg
+	require.NoError(t, err)
+	require.NotNil(t, account)
+
+	assert.Equal(t, arg.Username, account.Username)
+	assert.Equal(t, arg.FullName, account.FullName)
+	assert.Equal(t, arg.Email, account.Email)
+	assert.Equal(t, arg.DateOfBirth, account.DateOfBirth)
+	assert.Equal(t, arg.Address.Provinces, account.Address.Provinces)
+	assert.Equal(t, arg.Address.City, account.Address.City)
+	assert.Equal(t, arg.Address.ZIP, account.Address.ZIP)
+	assert.Equal(t, arg.Address.Street, account.Address.Street)
+	assert.True(t, account.PasswordChangeAt.IsZero(), "PasswordChangeAt isn't automatically generate")
+	assert.NotZero(t, account.CreatedAt)
+
+	return *account
 }
-func TestCreateAccount(t *testing.T) {
-	account, input := createRandomAccount(t)
 
-	if account.Owner != input.Owner {
-		t.Errorf("owner name in database \"%s\" isn't same as input \"%s\"", account.Owner, input.Owner)
-	} else if account.Balance != input.Balance {
-		t.Errorf("Balance in database \"%d\" isn't same as input \"%d\"", account.Balance, input.Balance)
-	} else if account.Currency != input.Currency {
-		t.Errorf("Currency in database \"%s\" isn't same as input \"%s\"", account.Currency, input.Currency)
+func TestCreateAccount(t *testing.T) {
+	createRandomAccount(t)
+}
+
+func TestCreateAccountFail(t *testing.T) {
+	account1 := createRandomAccount(t)
+
+	hashedPass, err := util.HashingPassword(util.RandomString(6))
+	if err != nil {
+		t.Error("Failed to hashing password, err: ", err)
 	}
 
-	if account.ID == 0 {
-		t.Errorf("ID isn't automatically generate")
-	} else if account.CreatedAt.IsZero() == true {
-		t.Errorf("created_at is nill")
+	dobInput := util.RandomDate()
+	date, err := util.GetDOB(dobInput)
+	require.NoError(t, err)
+
+	prov, city, zip := util.RandomAdress()
+
+	arg := CreateAccountParams{
+		Username:       util.RandomOwner(),
+		HashedPassword: hashedPass,
+		FullName:       util.RandomOwner(),
+		Email:          util.RandomEmail(),
+		DateOfBirth:    date,
+		Address: pkg.Addresses{
+			Provinces: prov,
+			City:      city,
+			ZIP:       zip,
+			Street:    "Jalan Raya Labuan, Km.19, Rt/Rw 01/02",
+		},
+	}
+
+	tests := []struct {
+		name     string
+		expected error
+	}{
+		{
+			name:     "existsUsername",
+			expected: util.ErrUsernameExists,
+		}, {
+			name:     "emptyUsername",
+			expected: util.ErrUsernameEmpty,
+		}, {
+			name:     "emptyPassword",
+			expected: util.ErrPasswordEmpty,
+		}, {
+			name:     "emptyFullname",
+			expected: util.ErrFullnameEmpty,
+		}, {
+			name:     "emptyDOB",
+			expected: util.ErrDOBEmpty,
+		}, {
+			name:     "emptyAddress",
+			expected: util.ErrAddressEmpty,
+		}, {
+			name:     "existsEmail",
+			expected: util.ErrEmailExists,
+		}, {
+			name:     "emptyEmail",
+			expected: util.ErrEmailEmpty,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			switch test.name {
+			case "existsUsername":
+				arg.Username = account1.Username
+			case "emptyUsername":
+				arg.Username = ""
+			case "emptyPassword":
+				arg.Username = util.RandomOwner()
+				arg.HashedPassword = ""
+			case "emptyFullname":
+				arg.HashedPassword = hashedPass
+				arg.FullName = ""
+			case "emptyDOB":
+				arg.FullName = util.RandomOwner()
+				arg.DateOfBirth = time.Time{}
+			case "emptyAddress":
+				arg.DateOfBirth, _ = util.GetDOB(dobInput)
+				arg.Address.City = ""
+			case "existsEmail":
+				arg.Username = util.RandomOwner()
+				arg.Address.City = city
+				arg.Email = account1.Email
+			case "emptyEmail":
+				arg.Email = ""
+			}
+
+			account, err := testQueries.CreateAccount(ctx, arg)
+
+			require.Error(t, err)
+			require.Empty(t, account)
+			require.Equal(t, test.expected, err)
+		})
 	}
 }
 
 func TestGetAccount(t *testing.T) {
-	account1, _ := createRandomAccount(t)
-	account2, err := testQueries.GetAccount(ctx, account1.ID)
+	account1 := createRandomAccount(t)
 
-	if err != nil {
-		t.Fatal(err)
-	}
-	if account2 == nil {
-		t.Error("Can't read account from database")
-	}
+	t.Run("GetAccByUsername", func(t *testing.T) {
+		account2, err := testQueries.GetAccount(ctx, account1.Username)
 
-	if account1.ID != account2.ID {
-		t.Errorf("ID input \"%d\" != ID output \"%d\"", account1.ID, account2.ID)
-	} else if account2.Owner != account2.Owner {
-		t.Errorf("Owner input \"%s\" != Owner output \"%s\"", account1.Owner, account2.Owner)
-	} else if account1.Balance != account2.Balance {
-		t.Errorf("Balance input \"%d\" != Balance output \"%d\"", account1.Balance, account2.Balance)
-	} else if account1.Currency != account2.Currency {
-		t.Errorf("Currency input \"%s\" != Currency output \"%s\"", account1.Currency, account2.Currency)
-	}
-}
+		require.Nil(t, err)
+		require.NotNil(t, account1)
+		require.NotNil(t, account2, "Can't read account from database")
 
-func TestUpdateAccount(t *testing.T) {
-	account1, _ := createRandomAccount(t)
-	input := UpdateAccountParams{
-		ID:      account1.ID,
-		Balance: util.RandomMoney(),
-	}
+		assert.Equal(t, account1.Username, account2.Username)
+		//assert.Equal(t, account1.HashedPassword, account2.HashedPassword)
+		assert.Equal(t, account1.FullName, account2.FullName)
+		assert.Equal(t, account1.Email, account2.Email)
+		assert.Equal(t, account1.DateOfBirth, account2.DateOfBirth)
+		assert.Equal(t, account1.Address.Provinces, account2.Address.Provinces)
+		assert.Equal(t, account1.Address.City, account2.Address.City)
+		assert.Equal(t, account1.Address.ZIP, account2.Address.ZIP)
+		assert.Equal(t, account1.Address.Street, account2.Address.Street)
+		assert.True(t, account2.PasswordChangeAt.IsZero(), "PasswordChangeAt isn't automatically generate")
+		assert.NotZero(t, account2.CreatedAt)
+		assert.Empty(t, account2.DeletedAt)
+	})
 
-	err := testQueries.UpdateAccount(ctx, input)
-	if err != nil {
-		t.Fatalf("Exec Error = %s", err)
-	}
+	t.Run("GetAccByAccNumber", func(t *testing.T) {
+		account2, err := testQueries.GetAccountByNumber(ctx, account1.AccountNumber)
 
-	account2, err := testQueries.GetAccount(ctx, input.ID)
-	if err != nil {
-		t.Errorf("GetAccount() function failed = %s", err)
-	} else if account2 == nil {
-		t.Errorf("failed to get an account from database")
-	}
+		require.Nil(t, err)
+		require.NotNil(t, account1)
+		require.NotNil(t, account2, "Can't read account from database")
 
-	if account1.ID != account2.ID {
-		t.Errorf("ID input \"%d\" != ID output \"%d\"", account1.ID, account2.ID)
-	} else if account2.Owner != account2.Owner {
-		t.Errorf("Owner input \"%s\" != Owner output \"%s\"", account1.Owner, account2.Owner)
-	} else if account1.Balance == account2.Balance {
-		t.Errorf("Balance input \"%d\" isn't updated, Balance output \"%d\"", account1.Balance, account2.Balance)
-	} else if account1.Currency != account2.Currency {
-		t.Errorf("Currency input \"%s\" != Currency output \"%s\"", account1.Currency, account2.Currency)
-	}
-}
-
-func TestDeleteAccount(t *testing.T) {
-	account1, _ := createRandomAccount(t)
-	if account1 == (pkg.Account{}) {
-		t.Errorf("failed to create random account")
-	}
-	err := testQueries.DeleteAccount(ctx, account1.ID)
-	if err != nil {
-		t.Errorf("DeleteAccount() err : %s", err)
-	}
-
-	account2, err := testQueries.GetAccount(ctx, account1.ID)
-	if errors.Is(err, sql.ErrNoRows) {
-		t.Errorf("Account still not deleted, %s", sql.ErrNoRows)
-	} else if account2 != nil {
-		t.Errorf("Account still not deleted")
-	}
-}
-
-func TestListAccount(t *testing.T) {
-	var account pkg.Account
-	for i := 0; i < 10; i++ {
-		account, _ = createRandomAccount(t)
-	}
-
-	arg := ListAccountParams{
-		Owner:  account.Owner,
-		Limit:  5,
-		Offset: 2,
-	}
-	accounts, err := testQueries.ListAccount(ctx, arg)
-	if err != nil {
-		t.Fatalf("ListAccount() func err : %s", err)
-	} else if len(accounts) != 5 {
-		t.Fatalf("can't get the right amount of account")
-	}
-
-	for _, account := range accounts {
-		if account == (pkg.Account{}) {
-			t.Errorf("the accounts are empty")
-		}
-	}
+		assert.Equal(t, account1.Username, account2.Username)
+		//assert.Equal(t, account1.HashedPassword, account2.HashedPassword)
+		assert.Equal(t, account1.FullName, account2.FullName)
+		assert.Equal(t, account1.Email, account2.Email)
+		assert.Equal(t, account1.DateOfBirth, account2.DateOfBirth)
+		assert.Equal(t, account1.Address.Provinces, account2.Address.Provinces)
+		assert.Equal(t, account1.Address.City, account2.Address.City)
+		assert.Equal(t, account1.Address.ZIP, account2.Address.ZIP)
+		assert.Equal(t, account1.Address.Street, account2.Address.Street)
+		assert.True(t, account2.PasswordChangeAt.IsZero(), "PasswordChangeAt isn't automatically generate")
+		assert.NotZero(t, account2.CreatedAt)
+		assert.Empty(t, account2.DeletedAt)
+	})
 }

@@ -11,6 +11,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"log"
 	"simple-bank-system/db/pkg"
 
 	"github.com/jackc/pgx/v4"
@@ -56,16 +57,18 @@ func (store *Store) execTx(ctx context.Context, fn func(*DB) error) error {
 }
 
 type TransferTxParams struct {
-	FromAccountID int64
-	ToAccountID   int64
-	Amount        int64
+	AccountID        int64
+	WalletID         int64
+	FromWalletNumber int64
+	ToWalletNumber   int64
+	Amount           int64
 }
 type TransferTXResult struct {
-	Transfer    *pkg.Transfers
-	FromAccount *pkg.Account
-	ToAccount   *pkg.Account
-	FromEntry   *pkg.Entry
-	ToEntry     *pkg.Entry
+	Transfer   *pkg.Transfers
+	FromWallet *pkg.Wallet
+	ToWallet   *pkg.Wallet
+	FromEntry  *pkg.Entry
+	ToEntry    *pkg.Entry
 }
 
 //var txKey = struct{}{}
@@ -79,48 +82,69 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (*Tran
 		//txName := ctx.Value(txKey)
 
 		//fmt.Println(txName, "create transfer")
+		//fmt.Println("(input) Transfer Tx Params:", arg)
 		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParam{
-			FromAccountID: arg.FromAccountID,
-			ToAccountID:   arg.ToAccountID,
-			Amount:        arg.Amount,
+			AccountID:        arg.AccountID,
+			WalletID:         arg.WalletID,
+			FromWalletNumber: arg.FromWalletNumber,
+			ToWalletNumber:   arg.ToWalletNumber,
+			Amount:           arg.Amount,
 		})
 		if err != nil {
+			log.Println("--(err) 1")
 			return err
 		}
 
 		//fmt.Println(txName, "create entry 1")
 		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParam{
-			accountID: arg.FromAccountID,
-			amount:    -arg.Amount,
+			accountID:    arg.AccountID,
+			walletID:     arg.WalletID,
+			walletNumber: arg.FromWalletNumber,
+			amount:       -arg.Amount,
 		})
 		if err != nil {
+			log.Println("--(err) 2")
 			return err
 		}
 
+		toWallet, err := q.GetWalletByNumber(ctx, arg.ToWalletNumber)
+		if err != nil {
+			log.Println("--(err) 3")
+			return err
+		}
 		//fmt.Println(txName, "create entry 2")
 		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParam{
-			accountID: arg.ToAccountID,
-			amount:    arg.Amount,
+			accountID:    toWallet.AccountID,
+			walletID:     toWallet.ID,
+			walletNumber: arg.ToWalletNumber,
+			amount:       arg.Amount,
 		})
 		if err != nil {
+			log.Println("--(err) 4")
 			return err
 		}
 
 		// From Account
 		// 1. GetAccount to get the balance, 2. Update the balance
 		// 3. GetAccount again to get updated balance
-		// account1, err := q.GetAccountForUpdate(ctx, arg.FromAccountID)
+		// account1, err := q.GetAccountForUpdate(ctx, arg.FromWalletID)
 
-		if arg.FromAccountID < arg.ToAccountID {
+		/*
+		 * To avoid deadlock, I make the wallet with the smaller wallet_number to update first
+		 */
+
+		if arg.FromWalletNumber < arg.ToWalletNumber {
 			//fmt.Println(txName, "update account 1")
-			result.FromAccount, result.ToAccount, err = AddMoney(ctx, q, arg.FromAccountID, -arg.Amount, arg.ToAccountID, arg.Amount)
+			result.FromWallet, result.ToWallet, err = AddMoney(ctx, q, arg.FromWalletNumber, -arg.Amount, arg.ToWalletNumber, arg.Amount)
 			if err != nil {
+				log.Println("--(err) 5:", err)
 				return err
 			}
 		} else {
 			//fmt.Println(txName, "update account 2")
-			result.ToAccount, result.FromAccount, err = AddMoney(ctx, q, arg.ToAccountID, arg.Amount, arg.FromAccountID, -arg.Amount)
+			result.ToWallet, result.FromWallet, err = AddMoney(ctx, q, arg.ToWalletNumber, arg.Amount, arg.FromWalletNumber, -arg.Amount)
 			if err != nil {
+				log.Println("--(err) 6:", err)
 				return err
 			}
 		}
@@ -131,18 +155,18 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (*Tran
 	return &result, err
 }
 
-func AddMoney(ctx context.Context, q *DB, accountID1, amount1, accountID2, amount2 int64) (account1 *pkg.Account, account2 *pkg.Account, err error) {
-	account1, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
-		ID:     accountID1,
-		Amount: amount1,
+func AddMoney(ctx context.Context, q *DB, walletNumb1, amount1, walletNumb2, amount2 int64) (wallet1 *pkg.Wallet, wallet2 *pkg.Wallet, err error) {
+	wallet1, err = q.AddWalletBalance(ctx, AddWalletBalanceParams{
+		WalletNumber: walletNumb1,
+		Amount:       amount1,
 	})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	account2, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
-		ID:     accountID2,
-		Amount: amount2,
+	wallet2, err = q.AddWalletBalance(ctx, AddWalletBalanceParams{
+		WalletNumber: walletNumb2,
+		Amount:       amount2,
 	})
 	if err != nil {
 		return nil, nil, err

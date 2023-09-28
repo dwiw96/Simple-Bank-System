@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	//"Simple-Bank-System/db/services"
 )
 
 var (
@@ -22,7 +21,7 @@ var (
 func TestMain(m *testing.M) {
 	config, err := util.LoadConfig("../..")
 	if err != nil {
-		log.Fatal("Cannont load config: ", err)
+		log.Fatal("Cannot load config: ", err)
 	}
 
 	dbpool, err = pgxpool.Connect(context.Background(), config.DBSource)

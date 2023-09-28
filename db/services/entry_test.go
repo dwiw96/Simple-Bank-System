@@ -5,73 +5,109 @@ import (
 
 	"simple-bank-system/db/pkg"
 	"simple-bank-system/util"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func createRandomEntries(t *testing.T, account pkg.Account) (pkg.Entry, CreateEntryParam) {
+func createRandomEntries(t *testing.T, accountID int64, wallet pkg.Wallet) (pkg.Entry, CreateEntryParam) {
 	arg := CreateEntryParam{
-		accountID: account.ID,
-		amount:    util.RandomMoney(),
+		accountID:    accountID,
+		walletID:     wallet.ID,
+		walletNumber: wallet.WalletNumber,
+		amount:       util.RandomMoney(),
 	}
+
 	res, err := testQueries.CreateEntry(ctx, arg)
-	if err != nil {
-		t.Fatalf("CreateEntry() err = %s", err)
-	} else if res == nil {
-		t.Fatalf("Entry is empty")
-	}
+	require.Nil(t, err, "CreateEntry() err = %s", err)
+	require.NotNil(t, res)
+
+	assert.Equal(t, arg.accountID, res.AccountID)
+	assert.Equal(t, arg.walletID, res.WalletID)
+	assert.Equal(t, arg.walletNumber, res.WalletNumber)
+	assert.Equal(t, arg.amount, res.Amount)
 
 	return *res, arg
 }
 
-func TestCreatedEntry(t *testing.T) {
-	account, _ := createRandomAccount(t)
-	entry, input := createRandomEntries(t, account)
-
-	if entry.AccountID != input.accountID {
-		t.Fatalf("ID account in DB %d != %d ID account input", entry.AccountID, input.accountID)
-	} else if entry.Amount != input.amount {
-		t.Fatalf("Amount in DB \"%d\" != \"%d\" Amount input", entry.Amount, input.amount)
-	}
+func TestCreateEntry(t *testing.T) {
+	account := createRandomAccount(t)
+	wallet, _ := createRandomWallet(t, account)
+	createRandomEntries(t, account.ID, wallet)
 }
 
 func TestGetEntry(t *testing.T) {
-	account, _ := createRandomAccount(t)
-	entry1, _ := createRandomEntries(t, account)
-	entry2, err := testQueries.GetEntry(ctx, entry1.ID)
-	if err != nil {
-		t.Fatalf("GetEntry(%d) err = %v", entry1.AccountID, err)
-	}
+	account := createRandomAccount(t)
+	wallet, _ := createRandomWallet(t, account)
+	entry1, _ := createRandomEntries(t, account.ID, wallet)
+	entry2, err := testQueries.GetEntry(ctx, entry1.ID, "ID")
+	require.Nil(t, err, "GetEntry(%d) err = %v", entry1.ID, err)
 
-	if entry2.ID != entry1.ID {
-		t.Fatalf("ID entry DB %d != %d ID input", entry2.ID, entry1.ID)
-	} else if entry2.AccountID != entry1.AccountID {
-		t.Fatalf("Account ID %d != %d input", entry2.AccountID, entry1.AccountID)
-	} else if entry2.Amount != entry1.Amount {
-		t.Fatalf("Amount DB %d != %d input", entry2.Amount, entry1.Amount)
-	} else if entry2.CreatedAt != entry1.CreatedAt {
-		t.Fatalf("date DB %v != %v input", entry2.CreatedAt, entry1.CreatedAt)
-	}
+	assert.Equal(t, entry1.ID, entry2.ID)
+	assert.Equal(t, entry1.AccountID, entry2.AccountID)
+	assert.Equal(t, entry1.WalletID, entry2.WalletID)
+	assert.Equal(t, entry1.WalletNumber, entry2.WalletNumber)
+	assert.Equal(t, entry1.Amount, entry2.Amount)
+	assert.Equal(t, entry1.CreatedAt, entry2.CreatedAt)
+	assert.Empty(t, entry2.DeletedAt)
 }
 
 func TestListEntry(t *testing.T) {
-	account, _ := createRandomAccount(t)
-	for i := 0; i < 10; i++ {
-		createRandomEntries(t, account)
+	account := createRandomAccount(t)
+	wallet1, _ := createRandomWallet(t, account)
+	wallet2, _ := createRandomWallet(t, account)
+	for i := 0; i < 5; i++ {
+		createRandomEntries(t, account.ID, wallet1)
+	}
+	for i := 0; i < 5; i++ {
+		createRandomEntries(t, account.ID, wallet2)
 	}
 
-	arg := listEntryParam{
-		limit:  5,
-		offset: 4,
-	}
-	entries, err := testQueries.ListEntry(ctx, arg)
-	if err != nil {
-		t.Fatalf("ListEntry() err = %v", err)
-	} else if len(entries) != 5 {
-		t.Fatalf("amount of data %v <= 5 input ", len(entries))
-	}
-
-	for _, entry := range entries {
-		if entry == (pkg.Entry{}) {
-			t.Fatalf("account is empty")
+	t.Run("LimitOffset", func(t *testing.T) {
+		arg := listEntryParam{
+			limit:  5,
+			offset: 4,
 		}
-	}
+		entries, err := testQueries.ListEntry(ctx, arg)
+
+		require.NoError(t, err)
+		require.Len(t, entries, 5)
+
+		for _, entry := range entries {
+			assert.NotEmpty(t, entry)
+		}
+	})
+
+	t.Run("ListByAccID", func(t *testing.T) {
+		entries, err := testQueries.ListEntryByID(ctx, account.ID, false)
+
+		require.NoError(t, err)
+		require.Len(t, entries, 10)
+
+		for _, entry := range entries {
+			assert.NotEmpty(t, entry)
+		}
+	})
+
+	t.Run("ListByWalID", func(t *testing.T) {
+		entries, err := testQueries.ListEntryByID(ctx, wallet2.ID, true)
+
+		require.NoError(t, err)
+		require.Len(t, entries, 5)
+
+		for _, entry := range entries {
+			assert.NotEmpty(t, entry)
+		}
+	})
+
+	t.Run("ListByDate", func(t *testing.T) {
+		entries, err := testQueries.ListEntryByDate(ctx, "2023-01-01", "2023-09-23", true)
+
+		require.NoError(t, err)
+		//require.Len(t, entries, 5)
+
+		for _, entry := range entries {
+			assert.NotEmpty(t, entry)
+		}
+	})
 }
