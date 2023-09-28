@@ -1,0 +1,164 @@
+{
+    "username": "dwiw",
+    "fullname": {
+        "first": "Dwi",
+        "last": "Wahyudi",
+    },
+    "gender": "male",
+    "date_of_birth": "1996-12-22",
+    "address": {
+        "provice": "Banten",
+        "city": "Pandeglang",
+        "zip": 42273,
+        "street": "Jl. Raya Labuan, Km.19, Rt/Rw 02/01, Kp. Saketi Pasir, Kec. Saketi",
+    },
+    "email": "dwiw@mail.com",
+    "password": "secret1"
+    "phone": "-",
+    "cell": "(+62)-822-1044",
+    "picture": {
+        "large": "https://randomuser.me/api/portraits/women/33.jpg",
+        "thumbnail": "https://randomuser.me/api/portraits/thumb/women/33.jpg"
+    }
+}
+
+----- 01
+{
+    "username": "marker",
+    "fullname": "Mark Spekman",
+    "date_of_birth": "1986-05-12",
+    "address": {
+        "provice": "DKI Jakarta",
+        "city": "Jakarta Barat",
+        "zip": 10203,
+        "street": "Jl Tj Karang 3-4 A Ged Dana Pensiun Bank Mandiri Room 302 Lt 3"
+    },
+    "email": "marker@mail.com",
+    "password": "secret1"
+}
+----- 02
+{
+    "username": "kyle",
+    "fullname": "Kyle Cain",
+    "date_of_birth": "1990-03-26",
+    "address": {
+        "provice": "Jawa Tengah",
+        "city": "Semarang",
+        "zip": 50118,
+        "street": "Jl Raya Kaligawe Km 5-6 Kawasan Industri Terboyo Bl C-10"
+    },
+    "email": "cain@mail.com",
+    "password": "secret2"
+}
+----- 03
+{
+    "username": "febinov",
+    "fullname": "Febi Novitasari",
+    "date_of_birth": "1985-10-05",
+    "address": {
+        "provice": "Sumatra Selatan",
+        "city": "Palembang",
+        "zip": 30147,
+        "street": "Jl Raya Palembang Indralaya Km 28"
+    },
+    "email": "febinov@mail.com",
+    "password": "secret3"
+}
+-----04
+{
+    "username": "auror",
+    "fullname": "Aurora Blanco",
+    "date_of_birth": "2000-01-30",
+    "address": {
+        "provice": "Andalucía",
+        "city": "Palma de Mallorca",
+        "zip": 68302,
+        "street": "13 Woodsman Dr.Chapel Hill, NC 27516"
+    },
+    "email": "auror@mail.com",
+    "password": "secret4"
+}
+-----05
+{
+    "username": "lulut",
+    "fullname": "Lulut Mandala",
+    "date_of_birth": "2003-06-15",
+    "address": {
+        "provice": "Jawa Barat",
+        "city": "Bandung",
+        "zip": 40115,
+        "street": "Jl Cisangkuy 56, Jawa Barat"
+    },
+    "email": "lulut@mail.com",
+    "password": "secret5"
+}
+----- 06
+{
+    "username": "dee",
+    "fullname": "Dee Oconnor",
+    "date_of_birth": "1986-05-12",
+    "address": {
+        "provice": "Overijssel",
+        "city": "Veulen",
+        "zip": 10203,
+        "street": "8944 Indian Spring Ave. Zionsville, IN 46077"
+    },
+    "email": "dee@mail.com",
+    "password": "secret6"
+}
+----- 07
+{
+    "username": "tari",
+    "fullname": "Tari Namaga",
+    "date_of_birth": "1994-08-31",
+    "address": {
+        "provice": "Cork",
+        "city": "Newbridge",
+        "zip": 12808,
+        "street": "8540 Fairway Road Riverside, NJ 08075"
+    },
+    "email": "tari@mail.com",
+    "password": "secret7"
+}
+----- 08
+{
+    "username": "pear",
+    "fullname": "Pearlie Harrington",
+    "date_of_birth": "1980-07-17",
+    "address": {
+        "provice": "Balikpapan",
+        "city": "Srengat",
+        "zip": 66152,
+        "street": "720 West Marconi Avenue Hicksville, NY 11801"
+    },
+    "email": "pear@mail.com",
+    "password": "secret8"
+}
+-----09
+{
+    "username": "rabat",
+    "fullname": "Jinawi Amrabat",
+    "date_of_birth": "1978-09-02",
+    "address": {
+        "provice": "San Luis Potosí",
+        "city": "Querobabi",
+        "zip": 90705,
+        "street": "65 West Stonybrook Road Miami Gardens, FL 33056"
+    },
+    "email": "Jinawi@mail.com",
+    "password": "secret9"
+}
+-----10
+{
+    "username": "celu",
+    "fullname": "Celular Miako",
+    "date_of_birth": "1994-10-25",
+    "address": {
+        "provice": "Lvivska",
+        "city": "Kipuche",
+        "zip": 20256,
+        "street": "41 South Wood Road Canal Winchester, OH 43110"
+    },
+    "email": "celu@mail.com",
+    "password": "secret10"
+}
