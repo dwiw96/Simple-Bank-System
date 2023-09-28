@@ -1,0 +1,14 @@
+- When account created the api automatically create 1 primary wallet (PK Wallet) that user can't see
+- PK wallet is functioned to top up/withdraw/transfer
+
+API Rules:
+1)  Transfer
+    1. Account to Account is possible (via primary wallet)
+    2. Account to wallet of another account is possible (via primary wallet)
+    3. Wallet to wallet only for wallet with same account owner
+    4. Wallet to Account
+
+Error catch:
+1)  Account
+    1. Already exist username
+    2. Already exist email
