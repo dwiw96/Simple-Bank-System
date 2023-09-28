@@ -1,0 +1,543 @@
+openapi: '3.0.2'
+info:
+  title: Simple Bank System API
+  version: '1.0'
+  description: OpenAPI for Simple Bank System
+  contact:
+    name: Dwi Wahyudi
+    email: dwiwahyudi1996@gmail.com
+    url: www.linkedin.com/in/dwi-wahyudi-1b1506188
+servers:
+  - url: https://localhost:8080
+
+paths:
+  /account:
+    post:
+      summary: create new account
+      description: 
+        Create new account by provide user information
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                password:
+                  type: string
+                  minLength: 6
+                fullname:
+                  type: string
+                  minLength: 1
+                date_of_birth:
+                  type: string
+                  minLength: 10
+                  required:
+                    - '01-12-2000'
+                address:
+                  properties:
+                    province:
+                      type: string
+                      minLength: 1
+                    city:
+                      type: string
+                      minLength: 1
+                    zip:
+                      type: string
+                      minLength: 1
+                    street:
+                      type: string
+                      minLength: 1
+                email:
+                  type: string
+                  minLength: 5
+                  required:
+                    - '@'
+            example:
+              username: dwiw
+              password: secret1
+              fullname: Dwi Wahyudi
+              date_of_birth: 01-12-2000
+              address:
+                properties:
+                  province: Banten
+                  city: Jakarta Barat
+                  zip: 10203
+                  street: Jl Tj Karang 3-4 A Ged Dana Pensiun Bank Mandiri Room 302 Lt 3
+              email: dwiwahyudi1996@gmail.com
+      responses:
+        '200':
+          description: A JSON array of user object
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  account_number:
+                    type: integer
+                    format: int64
+                  username:
+                    type: string
+                  fullname:
+                    type: string
+                  date_of_birth:
+                    type: string
+                    required:
+                      - '01-12-2000'
+                  address:
+                    properties:
+                      province:
+                        type: string
+                      city:
+                        type: string
+                      zip:
+                        type: string
+                      street:
+                        type: string
+                  email:
+                    type: string
+                    minLength: 5
+                  password_change_at:
+                    type: string
+                  created_at:
+                    type: string
+              example:
+                account_number: 1015551234
+                username: dwiw
+                fullname: Dwi Wahyudi
+                date_of_birth: 01-12-2000
+                address:
+                  properties:
+                    province: Banten
+                    city: Jakarta Barat
+                    zip: 10203
+                    street: Jl Tj Karang 3-4 A Ged Dana Pensiun Bank Mandiri Room 302 Lt 3
+                email: dwiwahyudi1996@gmail.com
+                password_change_at: 26-09-2023
+                created_at: 26-09-2023
+  /account/login:
+    post:
+      summary: login to account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                password:
+                  type: string
+                  minLength: 6
+            example:
+              username: dwiw
+              password: secret1
+      responses: 
+        '200':
+          description: Access token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  account_number:
+                    type: integer
+                    format: int64
+                  username:
+                    type: string
+                  fullname:
+                    type: string
+                  date_of_birth:
+                    type: string
+                  address:
+                    properties:
+                      province:
+                        type: string
+                      city:
+                        type: string
+                      zip:
+                        type: string
+                      street:
+                        type: string
+                  email:
+                    type: string
+                  password_change_at:
+                    type: string
+                  created_at:
+                    type: string
+              example:
+                account_number: 1015551234
+                username: dwiw
+                fullname: Dwi Wahyudi
+                date_of_birth: 01-12-2000
+                address:
+                  properties:
+                    province: Banten
+                    city: Jakarta Barat
+                    zip: 10203
+                    street: Jl Tj Karang 3-4 A Ged Dana Pensiun Bank Mandiri Room 302 Lt 3
+                email: dwiwahyudi1996@gmail.com
+                password_change_at: 26-09-2023
+                created_at: 26-09-2023
+  /wallet:
+    post:
+      security:
+        - bearerAuth: []
+      summary: create new wallet
+      parameters:
+        - in: header
+          name: token
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                currency:
+                  type: string
+                  minLength: 3
+                  required:
+                    - 'IDR'
+                    - 'USD'
+                    - 'EUR'
+                    - 'YEN'
+            example:
+              name: Daily
+              currency: IDR
+      responses: 
+        '200':
+          description: A JSON array of wallet object
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/WalletResponse'
+  /wallet/{walletNumber}:
+    get:
+      security:
+        - bearerAuth: []
+      summary: get wallet by wallet number
+      parameters:
+        - in: header
+          name: wallet number
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example:
+            1015551111
+      responses: 
+        '200':
+          description: A JSON array of wallet object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletResponse'
+  /wallet{?id&size}:
+    get:
+      security:
+        - bearerAuth: []
+      summary: get more than one wallets information
+      description: 
+        to get a list in form of json array of wallets, where id is first wallet and size is how many
+        wallet we want to get
+      parameters:
+        - in: query
+          name: list query
+          schema:
+            type: integer
+            format: int64
+          example:
+            ?id=2&size=3
+      responses: 
+        '200':
+          description: array of json of wallets information 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListWalletResponse'
+  /wallet/update/{number}:
+    put:
+      security:
+        - bearerAuth: []      
+      summary: create new wallet
+      parameters:
+        - in: header
+          name: wallet number
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example:
+            1015551111
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                balance:
+                  type: integer
+                  format: int64
+              example:
+                balance: 750000
+      responses: 
+        '200':
+          description: Message in json  that inform if update successfully or failed
+          content:
+            application/json:
+              schema:
+                type: string
+              example:
+                'Data modified'
+  /wallet/updateInfo/{number}:
+    put:
+      security:
+        - bearerAuth: []      
+      summary: create new wallet
+      parameters:
+        - in: header
+          name: wallet number
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example:
+            1015551111
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                currency:
+                  type: string
+                  minLength: 3
+              example:
+                name: 'car'
+                currency: 'EUR'
+      responses: 
+        '200':
+          description: Message in json  that inform if update successfully or failed
+          content:
+            application/json:
+              schema:
+                type: string
+              example:
+                'Data modified'
+  /wallet/delete/{number}:
+    delete:
+      security:
+        - bearerAuth: []
+      summary: delete wallet
+      description: 
+        delete wallet and it's information including the balance, but if the balance > 0, then the balance
+        will be transfer to account balance/primary wallet
+      parameters:
+        - in: header
+          name: wallet number
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example:
+            1015551111
+      responses: 
+        '200':
+          description: Message in jso  that inform if delete successfully or failed\
+          content:
+            application/json:
+              schema:
+                type: string
+              example:
+                'Wallet deleted'
+  /transfer:
+    post:
+      security:
+        - bearerAuth: []
+      summary: transfer balance from wallet to wallet
+      description: 
+        transfer balance from wallet to wallet that in or not in the same account using wallet number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                FromWalletNumber:
+                  type: integer
+                  format: int64
+                ToWalletNumber:
+                  type: integer
+                  format: int64
+                Amount:
+                  type: integer
+                  format: int64
+                currency:
+                  type: string
+                  minLength: 3
+              example:
+                FromWalletNumber: 10155511111
+                ToWalletNumber: 1015553333
+                Amount: 350000
+                currency: 'IDR'
+      responses: 
+        '200':
+          description: Access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:            # arbitrary name for the security scheme
+      type: http
+      scheme: bearer
+      bearerFormat: PASETO    # optional, arbitrary value for documentation purposes
+  schemas:
+    WalletResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          description: name for wallet
+        wallet_number:
+          type: integer
+          format: int64
+          description: unique number use for every transaction
+        balance:
+          type: integer
+          format: int64
+          description: money in the wallet
+        currency:
+          type: string
+        created_at:
+          type: string
+          description: date and time when the wallet created
+      example:
+        name: Daily
+        wallet_number: 1015551111
+        balance: 0
+        currency: IDR
+        created_at: 26-09-2023
+    ListWalletResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          name:
+            type: string
+          wallet_number:
+            type: integer
+            format: int64
+          balance:
+            type: integer
+            format: int64
+          currency:
+            type: string
+          created_at:
+            type: string
+      example:
+        - name: Daily
+          wallet_number: 1015551111
+          balance: 1250000
+          currency: IDR
+          created_at: 26-09-2023
+        - name: Saving
+          wallet_number: 1015552222
+          balance: 54000
+          currency: EUR
+          created_at: 30-09-2023
+        - name: Vacation
+          wallet_number: 1015553333
+          balance: 10000
+          currency: USD
+          created_at: 05-11-2023
+    TransferResponse:
+      type: object
+      properties:
+        Transfer:
+          type: object
+          properties:
+            FromWalletNumber:
+              type: integer
+              format: int64
+            ToWalletNumber:
+              type: integer
+              format: int64
+            Amount:
+              type: integer
+              format: int64
+            currency:
+              type: string
+              minLength: 3
+        Wallet:
+          type: object
+          properties:
+            name:
+              type: string
+            wallet_number:
+              type: integer
+              format: int64
+            balance:
+              type: integer
+              format: int64
+            currency:
+              type: string
+            created_at:
+              type: string
+        Entry:
+          type: object
+          properties:
+            wallet_number:
+              type: integer
+              format: int64
+            amount:
+              type: integer
+              format: int64
+            created_at:
+              type: string
+      example:
+        Transfer:
+          FromWalletNumber: 10155511111
+          ToWalletNumber: 1015553333
+          Amount: 0
+          currency: 'IDR'
+        FromWallet:
+          name: 'Daily'
+          wallet_number: 1015551111
+          balance: 350000
+          currency: EUR
+          created_at: 30-09-2023
+        ToWallet:
+          name: 'Vacation'
+          wallet_number: 1015553333
+          balance: 54000
+          currency: 'IDR'
+          created_at: 30-09-2023
+        FromEntry:
+          wallet_number: 1015551111
+          amount: -350000
+          created_at: 05-11-2023
+        ToEntry:
+          wallet_number: 1015553333
+          amount: 350000
+          created_at: 05-11-2023
+
