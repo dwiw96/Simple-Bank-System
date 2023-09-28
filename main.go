@@ -24,7 +24,7 @@ func main() {
 	}
 	defer dbpool.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1000*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 1200*time.Second)
 	defer cancel()
 
 	store := services.NewStore(dbpool)
