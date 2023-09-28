@@ -1,0 +1,114 @@
+@startuml
+entity account {
+id : number <<PK>>
+--
+account_number : int
+--
+username : varchar
+--
+hashed_password : varchar
+--
+fullname : varchar
+--
+date_of_birth : time
+--
+address : int <<FK>>
+--
+email : varchar
+--
+password_change_at: timestamptz
+--
+created_at : timestamptz
+}
+
+entity address {
+id : int <<PK>>
+--
+province : varchar
+--
+city : varchar
+--
+zip : int
+--
+street : text
+--
+created_at : timestamptz
+}
+
+entity wallet {
+id : number <<PK>>
+--
+account_id : int <<FK>>
+--
+name : varchar
+--
+wallet_number : int
+--
+balance : int
+--
+currency : varchar
+--
+created_at : timestamptz
+}
+
+entity entries {
+id : bigserial <<PK>>
+--
+wallet_number : int
+--
+amount: int
+--
+crated_at : timestamptz
+}
+
+entity transfer {
+id : bigserial <<PK>>
+--
+from_account_number : int
+--
+to_account_number: int
+--
+amount : int
+--
+created_at : timestamptz
+}
+
+entity logs {
+id : bigserial <<PK>>
+--
+account_number : int
+--
+login_date : date
+--
+login_time : time
+--
+created_at : timestampz
+}
+
+entity history {
+id : bigserial <<PK>>
+--
+account_id : int <<FK>>
+--
+wallet_id : int <<FK>>
+--
+wallet_number : int
+--
+entries : int <<FK>>
+--
+transfer : int <<FK>>
+--
+logs_id : int <<FK>>
+--
+created_at : timestamptz
+}
+
+account ||--|| address
+account.address ||--|| address.id
+account ||--|{ wallet
+account ||--|{ history
+wallet ||--|{ history
+history }|--|{ entries
+history }|--|{ transfer
+history }|--|{ logs
+@enduml
