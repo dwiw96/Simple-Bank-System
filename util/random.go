@@ -38,7 +38,7 @@ func RandomString(n int) string {
 }
 
 func RandomMoney() int64 {
-	return RandomInt(0, 1000)
+	return RandomInt(10, 1000)
 }
 
 func RandomOwner() string {
@@ -46,13 +46,17 @@ func RandomOwner() string {
 }
 
 func RandomCurrency() string {
-	currencies := []string{"IDR", "USD", "EUR"}
+	currencies := []string{"IDR", "USD", "EUR", "YEN"}
 	n := len(currencies)
 	return currencies[rand.Intn(n)]
 }
 
 func RandomEmail() string {
 	return fmt.Sprintf("%s@email.com", RandomString(6))
+}
+
+func RandomEmailWithUsername(username string) string {
+	return fmt.Sprintf("%s@email.com", username)
 }
 
 func RandomByte(n int) ([]byte, error) {
@@ -66,4 +70,53 @@ func RandomByte(n int) ([]byte, error) {
 
 func RandomPassword() string {
 	return RandomString(5) + fmt.Sprint(rand.Intn(10))
+}
+
+const idNumb = "0123456789"
+
+func RandomAccountID() string {
+	var sb strings.Builder
+	sb.WriteString("1010")
+	k := len(alphabet)
+
+	for i := 0; i < 8; i++ {
+		c := alphabet[rand.Intn(k)]
+		sb.WriteByte(c)
+	}
+
+	return sb.String()
+}
+
+func RandomWalletID(n string) string {
+	var sb strings.Builder
+	sb.WriteString(n)
+	k := len(alphabet)
+
+	for i := 0; i < 8; i++ {
+		c := alphabet[rand.Intn(k)]
+		sb.WriteByte(c)
+	}
+
+	return sb.String()
+}
+
+func RandomAdress() (string, string, int64) {
+	provinces := []string{"Banten", "DKI Jakarta", "Jogjakarta", "Kalimantan Timur", "Papua Barat"}
+	city := []string{"Pandeglang", "Serang", "Jakarta Barat", "Gunung Kidul", "Balikpapan", "Tenggarong", "Manokwari", "Fakfak"}
+
+	provLen := len(provinces)
+	cityLen := len(city)
+
+	return provinces[rand.Intn(provLen)], city[rand.Intn(cityLen)], RandomInt(1000, 9999)
+}
+
+func RandomDate() string {
+	startDate := time.Date(1960, 1, 1, 0, 0, 0, 0, time.UTC)
+	endDate := time.Date(2023, 12, 31, 0, 0, 0, 0, time.UTC)
+
+	duration := endDate.Sub(startDate)
+	randomDuration := time.Duration(rand.Int63n(int64(duration)))
+	randomDate := startDate.Add(randomDuration)
+
+	return randomDate.Format("2006-01-02")
 }
