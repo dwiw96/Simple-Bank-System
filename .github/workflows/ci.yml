@@ -53,6 +53,9 @@ jobs:
         which migrate
     - name: Run migration
       run: make migrateUp
+    
+    - name: go build
+      run: go build -v .
 
     - name: Test
       run: make test
