@@ -54,8 +54,5 @@ jobs:
     - name: Run migration
       run: make migrateUp
 
-    - name: Start server
-      run: make server
-
     - name: Test
       run: make test
