@@ -19,6 +19,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	log.Println("--- TestMain()")
 	config, err := util.LoadConfig("../..")
 	if err != nil {
 		log.Fatal("Cannot load config: ", err)
@@ -34,6 +35,8 @@ func TestMain(m *testing.M) {
 
 	ctx, cancel = context.WithTimeout(context.Background(), 1000*time.Second)
 	defer cancel()
+	log.Println("--- (1) TestMain()")
 
 	os.Exit(m.Run())
+	log.Println("--- (2) TestMain()")
 }

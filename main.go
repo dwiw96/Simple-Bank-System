@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	log.Println("--- Main()")
 	config, err := util.LoadConfig(".")
 	if err != nil {
 		log.Fatal("Cannot load config: ", err)
@@ -32,5 +33,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Can't create server, \nerr: ", err)
 	}
+	log.Println("--- (1) TestMain()")
 	server.Start(config.ServerAddress)
+	log.Println("--- (2) TestMain()")
 }
