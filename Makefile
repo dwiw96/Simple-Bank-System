@@ -20,7 +20,9 @@ migrateForce:
 
 server:
 	go run main.go
+stopServer:
+	end
 
 test:
-	go test -v -cover ./...
+	go test ./... -v -cover
 .PHONY: postgres createdb dropdb migrateup migratedown migrateup1 migratedown1 sqlc test server mock
