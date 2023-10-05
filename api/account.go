@@ -64,7 +64,7 @@ func newaccountResponse(account *pkg.Account) accountResponse {
 }
 
 func (server *Server) createAccount(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	//log.Println("----- Create new user handler")
+	log.Println("----- (API) > Create new user handler")
 
 	var req createAccountRequest
 

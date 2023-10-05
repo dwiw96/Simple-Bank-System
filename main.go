@@ -33,7 +33,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Can't create server, \nerr: ", err)
 	}
-	log.Println("--- (1) TestMain()")
+	log.Println("--- (start) Main()")
 	server.Start(config.ServerAddress)
-	log.Println("--- (2) TestMain()")
+	log.Println("--- (stop) Main()")
 }
