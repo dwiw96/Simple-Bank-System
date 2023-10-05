@@ -1,9 +1,11 @@
 package api
 
 import (
+	"bufio"
 	"context"
 	"log"
 	"net/http"
+	"os"
 	"simple-bank-system/db/services"
 	"simple-bank-system/token"
 	"simple-bank-system/util"
@@ -79,8 +81,17 @@ func (server *Server) setupRouter() (*httprouter.Router, http.Handler) {
 }
 
 func (server *Server) Start(address string) {
-	log.Println("Listening on localhost:", address)
-	log.Fatal(http.ListenAndServe(address, server.handler))
+	go func() {
+		log.Println("Listening on localhost:", address)
+		log.Fatal(http.ListenAndServe(address, server.handler))
+	}()
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		input := scanner.Text()
+		if input == "stop" {
+			break
+		}
+	}
 }
 
 func CreatePasetoMaker(key []byte) (token.Maker, error) {
