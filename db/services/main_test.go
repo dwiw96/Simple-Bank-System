@@ -38,5 +38,4 @@ func TestMain(m *testing.M) {
 	log.Println("--- (1) TestMain()")
 
 	os.Exit(m.Run())
-	log.Println("--- (2) TestMain()")
 }
