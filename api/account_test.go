@@ -91,6 +91,19 @@ func createRandomAccount(t *testing.T) accountResponse {
 	json.Unmarshal(resBody, &response) // convert json directly to struct
 	require.NotEmpty(t, response, "Response body is empty")
 
+	assert.NotZero(t, response.AccountNumber)
+	assert.Equal(t, arg.Username, response.Username)
+	assert.Equal(t, arg.FullName, response.FullName)
+	assert.Equal(t, arg.DateOfBirth, response.DateOfBirth)
+	assert.NotZero(t, response.Address)
+	assert.Equal(t, arg.Address.Provinces, response.Address.Provinces)
+	assert.Equal(t, arg.Address.City, response.Address.City)
+	assert.Equal(t, arg.Address.ZIP, response.Address.ZIP)
+	assert.Equal(t, arg.Address.Street, response.Address.Street)
+	assert.Equal(t, arg.Email, response.Email)
+	assert.NotZero(t, response.CreatedAt)
+	assert.Zero(t, response.PasswordChangeAt)
+
 	//fmt.Println("------------//------------//------------")
 	//fmt.Printf("response :\n%v\n", response)
 
@@ -229,10 +242,10 @@ func TestCreateAccountHandler(t *testing.T) {
 }*/
 
 func loginAccount(t *testing.T) loginResponse {
-	accResponse := createRandomAccount(t)
+	account := createRandomAccount(t)
 
 	arg := loginRequest{
-		Username: accResponse.Username,
+		Username: account.Username,
 		Password: Password,
 	}
 
@@ -272,6 +285,19 @@ func loginAccount(t *testing.T) loginResponse {
 	//response := string(resBody) // convert response body to string
 	json.Unmarshal(resBody, &response) // convert json directly to struct
 	require.NotEmpty(t, response, "Response body is empty")
+
+	assert.Equal(t, account.AccountNumber, response.Account.AccountNumber)
+	assert.Equal(t, arg.Username, response.Account.Username)
+	assert.Equal(t, account.FullName, response.Account.FullName)
+	assert.Equal(t, account.DateOfBirth, response.Account.DateOfBirth)
+	assert.Equal(t, account.Address, response.Account.Address)
+	assert.Equal(t, account.Address.Provinces, response.Account.Address.Provinces)
+	assert.Equal(t, account.Address.City, response.Account.Address.City)
+	assert.Equal(t, account.Address.ZIP, response.Account.Address.ZIP)
+	assert.Equal(t, account.Address.Street, response.Account.Address.Street)
+	assert.Equal(t, account.Email, response.Account.Email)
+	assert.Equal(t, account.CreatedAt, response.Account.CreatedAt)
+	assert.Equal(t, account.PasswordChangeAt, response.Account.PasswordChangeAt)
 
 	return response
 }
