@@ -91,7 +91,7 @@ func mockCreateRandomAccount(t *testing.T) accountResponse {
 	assert.Equal(t, arg.Address.Street, response.Address.Street)
 	assert.Equal(t, arg.Email, response.Email)
 	assert.NotZero(t, response.CreatedAt)
-	assert.NotZero(t, response.PasswordChangeAt)
+	assert.Zero(t, response.PasswordChangeAt)
 
 	return response
 }
