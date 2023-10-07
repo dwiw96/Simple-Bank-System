@@ -19,6 +19,9 @@ var (
 func TestMain(m *testing.M) {
 	log.Println("--- Test Main()")
 
+	location, _ := time.LoadLocation("UTC")
+	time.Local = location
+
 	config, err := util.LoadConfig("..")
 	if err != nil {
 		log.Fatal("Cannot load config: ", err)
