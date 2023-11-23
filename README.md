@@ -34,6 +34,32 @@ Server is run at http://localhost:8080
 make server
 ```
 
+## Request and Response Example
+### Create an account
+* Request
+```
+curl -X POST "http://localhost:8080/account" \
+     -H "Content-Type: application/json" \
+     --data-binary @- << EOF
+        {  "username": "marker",
+            "fullname": "Mark Spekman",
+            "date_of_birth": "1986-05-12",
+            "address": {
+                "province": "DKI Jakarta",
+                "city": "Jakarta Barat",
+                "zip": 10203,
+                "street": "Jl Tj Karang 3-4 A Ged Dana Pensiun Bank Mandiri Room 302 Lt 3"
+            },
+            "email": "marker@mail.com",
+            "password": "secret1"
+        }
+EOF
+```
+* Response
+```
+{"AccountNumber":1019194980,"Username":"marker","FullName":"Mark Spekman","DateOfBirth":"1986-05-12","Address":{"province":"DKI Jakarta","city":"Jakarta Barat","zip":10203,"street":"Jl Tj Karang 3-4 A Ged Dana Pensiun Bank Mandiri Room 302 Lt 3"},"Email":"marker@mail.com","PasswordChangeAt":"0001-01-01T07:07:12+07:07","CreatedAt":"2023-11-23T13:01:24.761992+07:00"}
+```
+
 ## API Endpoint
 For full complete api endpoint you can use openapi.yml. <br>
 file: (https://github.com/dwiw96/Simple-Bank-System/blob/main/openapi.yml)
